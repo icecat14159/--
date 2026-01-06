@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="UTF-8">
+    <title>海盜棋模擬網站</title>
+    <link rel="stylesheet" href="style.css">
+  </head>
+  <body>
+    <button id="menu-toggle" onclick="toggleSidebar()">☰</button>
+    <div id="ui-sidebar" class="sidebar-open">
+      <div id="ui-panel">
+        <div id="tool-panel">
+          <button id="quick-fill-toggle" onclick="toggleQuickFill()">快速佔領：OFF</button>
+        </div>
+        <div id="guild-selector"></div>
+      </div>
+    </div>
+
+    <div id="edit-modal" style="display: none;">
+      <div class="modal-content">
+        <h4>編輯公會資訊</h4>
+        <label>名稱：<input type="text" id="edit-name"></label><br><br>
+        <label>顏色：<input type="color" id="edit-color"></label><br><br>
+        <button onclick="saveGuildEdit()">儲存</button>
+        <button onclick="closeModal()">取消</button>
+      </div>
+    </div>
+
+    <svg id="hexMap">
+      <g id="viewport">
+        <g id="grid-layer"></g> 
+        <g id="effect-layer"></g>
+      </g>
+    </svg>
+
+    <script src="config.js"></script>
+    <script src="guildUI.js"></script>
+    <script src="logic.js"></script>
+    <script src="hex.js"></script>
+  </body>
+</html>

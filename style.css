@@ -1,0 +1,209 @@
+body { /*背景*/
+    background: #222;
+    align-items: flex-start;
+    height: 100vh;
+}
+#tool-panel {
+    margin-top: 15px;
+    padding-top: 10px;
+    border-top: 1px solid #555;
+}
+#quick-fill-toggle {
+    width: 100%;
+    padding: 10px;
+    background: #444;
+    color: white;
+    border: 1px solid #666;
+    border-radius: 4px;
+    cursor: pointer;
+}
+#quick-fill-toggle.active {
+    background: #28a745; /* 啟用時變綠色 */
+    border-color: #fff;
+}
+/* 切換按鈕樣式 */
+#menu-toggle {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  z-index: 200;
+  background: #444;
+  color: white;
+  border: none;
+  padding: 10px 15px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 20px;
+}
+/* 側邊欄容器 */
+#ui-sidebar {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 250px;
+  height: 100vh;
+  background: rgba(30, 30, 30, 0.9);
+  z-index: 150;
+  transition: transform 0.3s ease; /* 平滑移動效果 */
+  box-shadow: 2px 0 10px rgba(0,0,0,0.5);
+}
+/* 關閉狀態：向左移出螢幕 */
+#ui-sidebar.sidebar-closed {
+  transform: translateX(100%);
+}
+#ui-panel {
+  padding: 70px 15px 20px 15px; /* 頂部留空間給按鈕 */
+  height: calc(100% - 90px);
+  display: flex;
+  flex-direction: column;
+}
+#guild-selector {
+  flex-grow: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+/* 自定義捲動條樣式（美化） */
+#guild-selector::-webkit-scrollbar {
+  width: 6px;
+}
+#guild-selector::-webkit-scrollbar-thumb {
+  background: #555;
+  border-radius: 3px;
+}
+.guild-item {
+  display: flex;
+  align-items: center;
+  padding: 6px;
+  border-radius: 4px;
+  cursor: pointer;
+  background: rgba(255, 255, 255, 0.05);
+  border: 2px solid transparent;
+  transition: all 0.2s;
+}
+.guild-item.active {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: #fff;
+  box-shadow: 0 0 8px rgba(255, 255, 255, 0.3);
+}
+.guild-btn {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+}
+.guild-name-label {
+  flex-grow: 1;
+  margin-left: 10px;
+  font-size: 14px;
+  color: #eee;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.edit-btn {
+  background: #555;
+  border: none;
+  color: white;
+  border-radius: 3px;
+  padding: 2px 5px;
+  cursor: pointer;
+  font-size: 12px;
+  opacity: 0.6;
+}
+.edit-btn:hover {
+  opacity: 1;
+}
+/* 彈窗背景 */
+#edit-modal {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: rgba(0,0,0,0.7);
+  z-index: 1000;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.modal-content {
+  background: #333;
+  padding: 20px;
+  border-radius: 10px;
+  border: 1px solid #555;
+  color: white;
+}
+/* 強化按鈕選取感 */
+.guild-btn.active {
+  border: 3px solid #fff;
+  transform: scale(1.1);
+  box-shadow: 0 0 10px rgba(255,255,255,0.5);
+}
+.guild-item {
+  display: inline-flex;
+  align-items: center;
+  margin-bottom: 5px;
+}
+svg { /*容器背景*/
+    background: #2f3b3f;
+    width: 100vw;
+    height: 100vh;
+    display: block;
+    overflow: hidden;
+    touch-action: none; /* 防止移動端干擾 */
+}
+.hex {
+    fill: #c2d7f5;
+    stroke: #1e2a2d;
+    stroke-width: 1;
+    cursor: pointer;
+}
+.hex:hover {
+    fill: #89a3d8;
+}
+/* 特殊格標示 */
+.hex-effect {
+    fill: none;
+    pointer-events: none;
+}
+.hex-base {
+    stroke: #00ff00;
+    stroke-width: 4;
+    filter: drop-shadow(0 0 5px #00ff00);
+}
+.hex-facility {
+    stroke: #ffff00;
+    stroke-width: 4;
+    filter: drop-shadow(0 0 4px #ffff00);
+}
+.hex-obstacle {
+    stroke: #ff0000;
+    stroke-width: 4;
+}
+/* 確保圖案永遠在最上面 */
+.hex-icon {
+    pointer-events: none;
+    user-select: none;
+    font-size: 18px;
+    text-anchor: middle;
+    dominant-baseline: central;
+    fill: white;
+    text-shadow: 0 0 3px black; /* 增加文字辨識度 */
+}
+/* 封鎖標誌樣式 */
+.hex-blocked-mark {
+    fill: none;
+    stroke: rgba(255, 0, 0, 0.7); /* 半透明紅色 */
+    stroke-width: 5;
+    stroke-linecap: round;
+    pointer-events: none;
+    display: none; /* 預設隱藏 */
+}
+/* 當父元素被標記為 is-blocked 時顯示叉號 */
+.is-blocked + .hex-blocked-mark {
+    display: block;
+}
+/* 稍微調暗被封鎖的格子，但保留顏色 */
+.hex.is-blocked {
+    filter: brightness(0.9);
+}
