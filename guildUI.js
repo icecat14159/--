@@ -107,5 +107,61 @@ function saveGuildEdit() {
     closeModal();
 }
 
+const PRESET_COLORS = [
+    "#ffffff", // 白色
+    "#33ccff", // 天藍
+    "#9966ff", // 紫羅蘭
+    "#ff66b2", // 粉紅
+    "#008080", // 深青
+    "#b2b2b2", // 淺灰
+    "#6600cc", // 深紫
+    "#ccff33", // 萊姆綠 (偏黃)
+    "#00cc99", // 薄荷綠
+    "#99004c", // 桃紅
+    "#66b2ff", // 亮藍
+    "#c0c0c0", // 銀色
+    "#ff99cc", // 淺粉
+    "#4d94ff", // 鈷藍
+    "#99ffeb", // 淺青
+    "#9933ff", // 紫色
+    "#66ff66", // 淺綠 (與據點綠區分)
+    "#b380ff", // 薰衣草
+    "#5cd6d6", // 青綠
+    "#ffccff"  // 淡紫
+];
+
+function openEditModal(id) {
+    editingGuildId = id;
+    const guild = GUILD_CONFIG[id];
+    document.getElementById("edit-name").value = guild.name;
+    document.getElementById("edit-color").value = guild.color;
+    
+    // 生成色票
+    const container = document.getElementById("swatch-container");
+    container.innerHTML = "";
+    
+    PRESET_COLORS.forEach(color => {
+        const swatch = document.createElement("div");
+        swatch.className = "swatch";
+        swatch.style.backgroundColor = color;
+        
+        // 如果目前顏色等於此色票，標記為選中
+        if (guild.color.toUpperCase() === color.toUpperCase()) {
+            swatch.classList.add("selected");
+        }
+
+        swatch.onclick = () => {
+            // 更新隱藏的顏色輸入框
+            document.getElementById("edit-color").value = color;
+            // 更新色票選中視覺
+            document.querySelectorAll(".swatch").forEach(s => s.classList.remove("selected"));
+            swatch.classList.add("selected");
+        };
+        container.appendChild(swatch);
+    });
+
+    document.getElementById("edit-modal").style.display = "flex";
+}
+
 // 初始化
 document.addEventListener("DOMContentLoaded", renderGuildSelectors);

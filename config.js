@@ -1,21 +1,21 @@
 const GUILD_CONFIG = {
     0: { id: 0, name: "公海", color: "#c2d7f5", textColor: "#000" }, // 預設空白格
-    1: { id: 1, name: "公會1", color: "#94fdb2ff", textColor: "#fff" },
-    2: { id: 2, name: "公會2", color: "#d9fa7eff", textColor: "#000" },
-    3: { id: 3, name: "公會3", color: "#f173ffff", textColor: "#fff" },
-    4: { id: 4, name: "公會4", color: "#ffbb55ff", textColor: "#000" },
-    5: { id: 5, name: "公會5", color: "#ff8989ff", textColor: "#fff" },
-    6: { id: 6, name: "公會6", color: "#ff8989ff", textColor: "#000" },
-    7: { id: 7, name: "公會7", color: "#ff8989ff", textColor: "#fff" },
-    8: { id: 8, name: "公會8", color: "#ff8989ff", textColor: "#000" },
-    9: { id: 9, name: "公會9", color: "#ff8989ff", textColor: "#fff" },
-    10: { id: 10, name: "公會10", color: "#ff8989ff", textColor: "#000" },
-    11: { id: 11, name: "公會11", color: "#ff8989ff", textColor: "#fff" },
-    12: { id: 12, name: "公會12", color: "#ff8989ff", textColor: "#000" },
-    13: { id: 13, name: "公會13", color: "#ff8989ff", textColor: "#fff" },
-    14: { id: 14, name: "公會14", color: "#ff8989ff", textColor: "#000" },
-    15: { id: 15, name: "公會15", color: "#ff8989ff", textColor: "#fff" },
-    16: { id: 16, name: "公會16", color: "#ff8989ff", textColor: "#000" }
+    1: { id: 1, name: "公會1", color: "#ffffff", textColor: "#fff" },
+    2: { id: 2, name: "公會2", color: "#33ccff", textColor: "#000" },
+    3: { id: 3, name: "公會3", color: "#9966ff", textColor: "#fff" },
+    4: { id: 4, name: "公會4", color: "#ff66b2", textColor: "#000" },
+    5: { id: 5, name: "公會5", color: "#008080", textColor: "#fff" },
+    6: { id: 6, name: "公會6", color: "#b2b2b2", textColor: "#000" },
+    7: { id: 7, name: "公會7", color: "#6600cc", textColor: "#fff" },
+    8: { id: 8, name: "公會8", color: "#ccff33", textColor: "#000" },
+    9: { id: 9, name: "公會9", color: "#00cc99", textColor: "#fff" },
+    10: { id: 10, name: "公會10", color: "#99004c", textColor: "#000" },
+    11: { id: 11, name: "公會11", color: "#66b2ff", textColor: "#fff" },
+    12: { id: 12, name: "公會12", color: "#c0c0c0", textColor: "#000" },
+    13: { id: 13, name: "公會13", color: "#9933ff", textColor: "#fff" },
+    14: { id: 14, name: "公會14", color: "#5cd6d6", textColor: "#000" },
+    15: { id: 15, name: "公會15", color: "#ffccff", textColor: "#fff" },
+    16: { id: 16, name: "公會16", color: "#b380ff", textColor: "#000" }
 };
 
 // 格子類型枚舉
