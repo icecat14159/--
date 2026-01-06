@@ -102,6 +102,31 @@ body { /*背景*/
   overflow: hidden;
   text-overflow: ellipsis;
 }
+#swatch-container {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr); /* 5行4列 */
+    gap: 8px;
+    margin: 10px 0;
+    padding: 10px;
+    background: #222;
+    border-radius: 4px;
+}
+.swatch {
+    width: 30px;
+    height: 30px;
+    border-radius: 4px;
+    border: 1px solid #666;
+    cursor: pointer;
+    transition: transform 0.1s;
+}
+.swatch:hover {
+    transform: scale(1.2);
+    border-color: #fff;
+}
+.swatch.selected {
+    border: 2px solid #fff;
+    box-shadow: 0 0 5px #fff;
+}
 .edit-btn {
   background: #555;
   border: none;
@@ -167,9 +192,8 @@ svg { /*容器背景*/
     pointer-events: none;
 }
 .hex-base {
-    stroke: #00ff00;
-    stroke-width: 4;
-    filter: drop-shadow(0 0 5px #00ff00);
+    /* stroke: #00ff00; */
+    stroke-width: 2;
 }
 .hex-facility {
     stroke: #ffff00;
@@ -177,8 +201,8 @@ svg { /*容器背景*/
     filter: drop-shadow(0 0 4px #ffff00);
 }
 .hex-obstacle {
-    stroke: #ff0000;
-    stroke-width: 4;
+    /* stroke: #ff0000; */
+    stroke-width: 1;
 }
 /* 確保圖案永遠在最上面 */
 .hex-icon {
@@ -199,11 +223,6 @@ svg { /*容器背景*/
     pointer-events: none;
     display: none; /* 預設隱藏 */
 }
-/* 當父元素被標記為 is-blocked 時顯示叉號 */
-.is-blocked + .hex-blocked-mark {
-    display: block;
-}
-/* 稍微調暗被封鎖的格子，但保留顏色 */
 .hex.is-blocked {
-    filter: brightness(0.9);
+    filter: brightness(1);
 }
