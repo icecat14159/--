@@ -5,12 +5,11 @@
  */
 function getNeighbors(q, r) {
     const isOdd = (q % 2 !== 0);
-    
-    // 根據奇數列上移 (y -= HEX_HEIGHT / 2) 調整的鄰居位移表
+    // 修正順序以對應 hexPoints 的 0-5 邊
     const directions = isOdd ? [
-        [+1,  0], [+1, -1], [ 0, -1], [-1, -1], [-1,  0], [ 0, +1] // 奇數列偏移
+        [+1,  0], [ 0, +1], [-1,  0], [-1, -1], [ 0, -1], [+1, -1] 
     ] : [
-        [+1, +1], [+1,  0], [ 0, -1], [-1,  0], [-1, +1], [ 0, +1] // 偶數列偏移
+        [+1, +1], [ 0, +1], [-1, +1], [-1,  0], [ 0, -1], [+1,  0]
     ];
     
     return directions.map(d => ({ q: q + d[0], r: r + d[1] }));
@@ -83,4 +82,37 @@ function updateConnectivity() {
             });
         }
     }
+}
+
+// logic.js 中的 updateGuildOutlines 修正
+function updateGuildOutlines() {
+    document.querySelectorAll(".guild-outline").forEach(el => el.remove());
+
+    const allHexes = document.querySelectorAll('.hex');
+    allHexes.forEach(hex => {
+        const q = parseInt(hex.dataset.q);
+        const r = parseInt(hex.dataset.r);
+        const gId = parseInt(hex.dataset.guildId);
+
+        if (gId === 0) return;
+
+        const guildColor = GUILD_CONFIG[gId].color;
+        const neighbors = getNeighbors(q, r);
+
+        neighbors.forEach((n, sideIndex) => {
+            // 邊界檢查
+            if (n.q < 0 || n.q >= COLS || n.r < 0 || n.r >= ROWS) {
+                drawHexBoundary(q, r, sideIndex, guildColor);
+                return;
+            }
+
+            const neighborHex = document.querySelector(`.hex[data-q="${n.q}"][data-r="${n.r}"]`);
+            const neighborGId = neighborHex ? parseInt(neighborHex.dataset.guildId) : 0;
+
+            // 只有當鄰居是不同公會時，才畫那一條邊
+            if (neighborGId !== gId) {
+                drawHexBoundary(q, r, sideIndex, guildColor);
+            }
+        });
+    });
 }

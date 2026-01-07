@@ -1,5 +1,5 @@
 const GUILD_CONFIG = {
-    0: { id: 0, name: "公海", color: "#c2d7f5", textColor: "#000" }, // 預設空白格
+    0: { id: 0, name: "公海", color: "#c2d7f54d", textColor: "#000" }, // 預設空白格
     1: { id: 1, name: "公會1", color: "#ffffff", textColor: "#fff" },
     2: { id: 2, name: "公會2", color: "#33ccff", textColor: "#000" },
     3: { id: 3, name: "公會3", color: "#9966ff", textColor: "#fff" },
@@ -50,34 +50,34 @@ const MAP_FEATURES = {  //!!!!!!!!!!座標需設定!!!!!!!!!!
     FACILITIES: [
         { q: 2, r: 3, level: 1, name: "水手酒館" },   //左上
         { q: 2, r: 7, level: 1, name: "水手酒館" },
-        { q: 5, r: 1, level: 2, name: "海上餐廳" },
+        { q: 5, r: 1, level: 1, name: "水手酒館" },
         { q: 5, r: 5, level: 1, name: "水手酒館" },
         { q: 6, r: 3, level: 1, name: "水手酒館" },
-        { q: 9, r: 1, level: 2, name: "海上餐廳" },
+        { q: 9, r: 1, level: 1, name: "水手酒館" },
         { q: 2, r: 20, level: 1, name: "水手酒館" },   //左下
         { q: 2, r: 24, level: 1, name: "水手酒館" },
-        { q: 4, r: 27, level: 2, name: "海上餐廳" },
+        { q: 4, r: 27, level: 1, name: "水手酒館" },
         { q: 5, r: 23, level: 1, name: "水手酒館" },
         { q: 5, r: 25, level: 1, name: "水手酒館" },
-        { q: 8, r: 27, level: 2, name: "海上餐廳" },
+        { q: 8, r: 27, level: 1, name: "水手酒館" },
         { q: 19, r: 1, level: 1, name: "水手酒館" },   //右上
         { q: 22, r: 3, level: 1, name: "水手酒館" },
-        { q: 23, r: 1, level: 2, name: "海上餐廳" },
+        { q: 23, r: 1, level: 1, name: "水手酒館" },
         { q: 23, r: 5, level: 1, name: "水手酒館" },
         { q: 26, r: 3, level: 1, name: "水手酒館" },
-        { q: 26, r: 7, level: 2, name: "海上餐廳" },
+        { q: 26, r: 7, level: 1, name: "水手酒館" },
         { q: 20, r: 27, level: 1, name: "水手酒館" },   //右下
         { q: 23, r: 23, level: 1, name: "水手酒館" },
-        { q: 23, r: 25, level: 2, name: "海上餐廳" },
+        { q: 23, r: 25, level: 1, name: "水手酒館" },
         { q: 24, r: 27, level: 1, name: "水手酒館" },
         { q: 26, r: 20, level: 1, name: "水手酒館" },
-        { q: 26, r: 24, level: 2, name: "海上餐廳" },
+        { q: 26, r: 24, level: 1, name: "水手酒館" },
         { q: 1, r: 14, level: 1, name: "水手酒館" },   //中線
         { q: 5, r: 14, level: 1, name: "水手酒館" },
-        { q: 14, r: 2, level: 2, name: "海上餐廳" },
+        { q: 14, r: 2, level: 1, name: "水手酒館" },
         { q: 14, r: 6, level: 1, name: "水手酒館" },
         { q: 14, r: 22, level: 1, name: "水手酒館" },
-        { q: 14, r: 26, level: 2, name: "海上餐廳" },
+        { q: 14, r: 26, level: 1, name: "水手酒館" },
         { q: 23, r: 14, level: 1, name: "水手酒館" },
         { q: 27, r: 14, level: 1, name: "水手酒館" },
         { q: 12, r: 11, level: 3, name: "沈船點" }, //中央
@@ -86,9 +86,12 @@ const MAP_FEATURES = {  //!!!!!!!!!!座標需設定!!!!!!!!!!
         { q: 16, r: 17, level: 3, name: "沈船點" },
         { q: 10, r: 14, level: 3, name: "沈船點" },
         { q: 18, r: 14, level: 3, name: "沈船點" },
-        { q: 14, r: 14, level: 4, name: "珍寶點" },
-        { q: 14, r: 9, level: 0, name: "人魚島" },   //人魚
-        { q: 14, r: 19, level: 0, name: "人魚島" }
+        { q: 14, r: 14, level: 4, name: "珍寶點" }
+    ],
+    //人魚島
+    BUFFS: [
+        { q: 14, r: 9, name: "人魚島", type: "power_buff" },
+        { q: 14, r: 19, name: "人魚島", type: "power_buff" }
     ],
     //障礙*31
     OBSTACLES: [
@@ -109,5 +112,6 @@ const MAP_FEATURES = {  //!!!!!!!!!!座標需設定!!!!!!!!!!
 const FEATURE_TYPES = {
     BASE: 'base',
     FACILITY: 'facility',
+    BUFF: 'buff',      //人魚島
     OBSTACLE: 'obstacle'
 };

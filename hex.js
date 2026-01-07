@@ -27,6 +27,15 @@ function hexPoints(cx, cy, size) {
   return points.join(" ");
 }
 
+function hexToPixel(q, r) {
+    const x = q * (HEX_SIZE * 1.5) + HEX_SIZE;
+    let y = r * HEX_HEIGHT + HEX_HEIGHT / 2;
+    if (q % 2 === 1) {
+        y -= HEX_HEIGHT / 2;
+    }
+    return { x, y };
+}
+
 function getFeatureAt(q, r) {
     const isBase = MAP_FEATURES.BASE.find(b => b.q === q && b.r === r);
     if (isBase) return { type: FEATURE_TYPES.BASE, guildId: isBase.guildId };
@@ -34,6 +43,9 @@ function getFeatureAt(q, r) {
     const isFac = MAP_FEATURES.FACILITIES.find(f => f.q === q && f.r === r);
     if (isFac) return { type: FEATURE_TYPES.FACILITY, level: isFac.level };
     
+    const isBuff = MAP_FEATURES.BUFFS.find(b => b.q === q && b.r === r);
+    if (isBuff) return { type: FEATURE_TYPES.BUFF, name: isBuff.name };
+
     const isObs = MAP_FEATURES.OBSTACLES.find(o => o.q === q && o.r === r);
     if (isObs) return { type: FEATURE_TYPES.OBSTACLE };
     
@@ -42,15 +54,22 @@ function getFeatureAt(q, r) {
 
 // 重構：統一的佔領函式
 function occupyTile(element) {
-  const type = element.dataset.type;
-  // 據點與障礙物不可被變更佔領
-  if (type === FEATURE_TYPES.BASE || type === FEATURE_TYPES.OBSTACLE) return;
+    const type = element.dataset.type;
+    // 據點與障礙不可佔領
+    if (type === FEATURE_TYPES.BASE || type === FEATURE_TYPES.OBSTACLE) return;
 
-  const guildId = getCurrentGuildId();
-  element.dataset.guildId = guildId;
-  element.style.fill = GUILD_CONFIG[guildId].color;
-  // 設施可以被佔領，但顏色變更時應保留發光邊框（由 CSS class 控制）
-  updateConnectivity(); 
+    const guildId = getCurrentGuildId();
+    element.dataset.guildId = guildId;
+
+    // 根據當前「隱藏地標」開關決定填色
+    if (!isLandmarksHidden && (type === FEATURE_TYPES.FACILITY || type === FEATURE_TYPES.BUFF)) {
+        element.style.fill = (type === FEATURE_TYPES.FACILITY) ? "#ffd700" : "#00ffff";
+    } else {
+        element.style.fill = GUILD_CONFIG[guildId].color;
+    }
+
+    updateConnectivity();
+    if (typeof updateGuildOutlines === "function") updateGuildOutlines();
 }
 
 const gridLayer = document.getElementById("grid-layer");
@@ -86,13 +105,14 @@ for (let q = 0; q < COLS; q++) {
         hex.dataset.guildId = feature.guildId;
         hex.style.fill = GUILD_CONFIG[feature.guildId].color;
         addSpecialEffect(x, y, "hex-base", "🚢");
-      } else if (feature.type === FEATURE_TYPES.FACILITY) {
+      }else if (feature.type === FEATURE_TYPES.FACILITY) {
         hex.dataset.level = feature.level;
         const icon = feature.level >= 3 ? "🏯" : "🏠";
         addSpecialEffect(x, y, "hex-facility", icon);
-      } else if (feature.type === FEATURE_TYPES.OBSTACLE) {
-        hex.style.fill = "#ff4444";
-        addSpecialEffect(x, y, "hex-obstacle", "🪨");
+      }else if (feature.type === FEATURE_TYPES.BUFF) {
+        addSpecialEffect(x, y, "hex-buff", "🧜‍♀️");
+      }else if (feature.type === FEATURE_TYPES.OBSTACLE) {
+        hex.classList.add("hex-obstacle");
       }
     }
     
@@ -143,7 +163,7 @@ for (let q = 0; q < COLS; q++) {
 function addSpecialEffect(cx, cy, className, iconText) {
     // 1. 建立一個虛擬的發光層（僅有邊框，填色透明）
     const effectHex = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
-    effectHex.setAttribute("points", hexPoints(cx, cy, HEX_SIZE));
+    effectHex.setAttribute("points", hexPoints(cx, cy, HEX_SIZE*0.9));
     effectHex.setAttribute("class", `hex-effect ${className}`);
     effectHex.setAttribute("fill", "transparent");
     effectHex.style.pointerEvents = "none"; // 不干擾點擊
@@ -164,6 +184,37 @@ window.updateMapColors = function(guildId, newColor) {
     hex.style.fill = newColor;
   });
 };
+
+function drawHexBoundary(q, r, sideIndex, color) {
+    const { x, y } = hexToPixel(q, r);
+    // 關鍵：使用與 hexPoints 完全一致的邏輯
+    const points = [];
+    for (let i = 0; i < 6; i++) {
+        const angle = Math.PI / 180 * (60 * i);
+        points.push({
+            x: x + HEX_SIZE*0.9 * Math.cos(angle),
+            y: y + HEX_SIZE*0.9 * Math.sin(angle)
+        });
+    }
+
+    // 取得該邊的兩個端點
+    const p1 = points[sideIndex];
+    const p2 = points[(sideIndex + 1) % 6];
+
+    const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+    line.setAttribute("x1", p1.x); line.setAttribute("y1", p1.y);
+    line.setAttribute("x2", p2.x); line.setAttribute("y2", p2.y);
+    
+    // 視覺微調：使用顏色與發光
+    line.setAttribute("stroke", color);
+    line.setAttribute("stroke-width", "4"); 
+    line.setAttribute("stroke-linecap", "round");
+    line.setAttribute("class", "guild-outline");
+    line.style.filter = `drop-shadow(0 0 3px ${color})`;
+    line.style.pointerEvents = "none";
+    
+    document.getElementById("effect-layer").appendChild(line);
+}
 
 //縮放與拖曳
 let scale = 1;  //縮放
@@ -274,7 +325,25 @@ window.addEventListener("mouseup", () => {
   svg.style.cursor = "default";
 });
 
+function updateBackgroundSize() {
+    const bg = document.getElementById("map-background");
+    if (bg) {
+        // 讓圖片寬度等於地圖計算出來的總寬度
+        bg.setAttribute("width", MAP_WIDTH);
+        bg.setAttribute("height", MAP_HEIGHT);
+        
+        // 稍微調整位移，補足六角格生成的邊際空間
+        bg.setAttribute("x", 0);
+        bg.setAttribute("y", -(HEX_HEIGHT/2));
+        
+        // 調整底圖透明度，方便觀察格子覆蓋情況
+        bg.setAttribute("opacity", "0.6"); 
+    }
+}
+
 function initMapPosition() {
+  updateBackgroundSize();
+
   const rect = svg.getBoundingClientRect();
   // 將地圖中心對準視窗中心
   translateX = (rect.width - MAP_WIDTH * scale) / 2;

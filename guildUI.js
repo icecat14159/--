@@ -79,6 +79,40 @@ function renderGuildSelectors() {
     });
 }
 
+let isLandmarksHidden = false;
+
+function toggleLandmarks() {
+    isLandmarksHidden = !isLandmarksHidden;
+    const btn = document.getElementById("landmark-toggle");
+    const map = document.getElementById("hexMap");
+    
+    btn.innerText = `隱藏地標：${isLandmarksHidden ? "ON" : "OFF"}`;
+    btn.classList.toggle("active", isLandmarksHidden);
+
+    if (isLandmarksHidden) {
+        map.classList.add("hide-landmarks");
+    } else {
+        map.classList.remove("hide-landmarks");
+    }
+    refreshMapColors(); 
+}
+
+function refreshMapColors() {
+    const allHexes = document.querySelectorAll('.hex');
+    allHexes.forEach(hex => {
+        const type = hex.dataset.type;
+        const gId = parseInt(hex.dataset.guildId || 0);
+        
+        if (!isLandmarksHidden && (type === 'facility' || type === 'buff')) {
+            // 顯示地標專屬色
+            hex.style.fill = (type === 'facility') ? "#ffd70090" : "#00ffff90";
+        } else {
+            // 顯示所屬公會顏色 (gId 0 為公海色)
+            hex.style.fill = GUILD_CONFIG[gId].color;
+        }
+    });
+}
+
 function openEditModal(id) {
     editingGuildId = id;
     const guild = GUILD_CONFIG[id];

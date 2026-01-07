@@ -11,6 +11,7 @@
       <div id="ui-panel">
         <div id="tool-panel">
           <button id="quick-fill-toggle" onclick="toggleQuickFill()">快速佔領：OFF</button>
+          <button id="landmark-toggle" onclick="toggleLandmarks()">隱藏地標：OFF</button>
         </div>
         <div id="guild-selector"></div>
       </div>
@@ -30,6 +31,7 @@
 
     <svg id="hexMap">
       <g id="viewport">
+        <image id="map-background" href="map-bg.jpg" x="0" y="0"></image>
         <g id="grid-layer"></g> 
         <g id="effect-layer"></g>
       </g>

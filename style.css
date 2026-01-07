@@ -8,18 +8,30 @@ body { /*背景*/
     padding-top: 10px;
     border-top: 1px solid #555;
 }
-#quick-fill-toggle {
-    width: 100%;
-    padding: 10px;
-    background: #444;
+#quick-fill-toggle, 
+#landmark-toggle {
+    padding: 8px 12px;
+    margin: 5px;
+    background-color: #444;
     color: white;
     border: 1px solid #666;
     border-radius: 4px;
     cursor: pointer;
+    transition: background-color 0.2s;
 }
-#quick-fill-toggle.active {
-    background: #28a745; /* 啟用時變綠色 */
-    border-color: #fff;
+#quick-fill-toggle:hover, 
+#landmark-toggle:hover {
+    background-color: #555;
+}
+/* 讓兩個按鈕在啟動（Active）狀態時有相同的視覺回饋 */
+#quick-fill-toggle.active, 
+#landmark-toggle.active {
+    background-color: #28a745; /* 或是你偏好的啟動顏色 */
+    border-color: #ffffff;
+}
+#quick-fill-toggle.active:hover, 
+#landmark-toggle.active:hover {
+    background-color: #218838; /* 稍微深一點或亮一點的綠色 */
 }
 /* 切換按鈕樣式 */
 #menu-toggle {
@@ -178,13 +190,16 @@ svg { /*容器背景*/
     touch-action: none; /* 防止移動端干擾 */
 }
 .hex {
-    fill: #c2d7f5;
-    stroke: #1e2a2d;
+    fill: #c2d7f54d; /* 降低預設格子的不透明度 */
+    stroke: #1e2a2d80;
     stroke-width: 1;
     cursor: pointer;
 }
+.hex[data-guild-id]:not([data-guild-id="0"]) {
+    fill-opacity: 0.5; 
+}
 .hex:hover {
-    fill: #89a3d8;
+    fill: #89a3d8bb;
 }
 /* 特殊格標示 */
 .hex-effect {
@@ -195,10 +210,25 @@ svg { /*容器背景*/
     /* stroke: #00ff00; */
     stroke-width: 2;
 }
-.hex-facility {
-    stroke: #ffff00;
-    stroke-width: 4;
-    filter: drop-shadow(0 0 4px #ffff00);
+/* 設施與人魚島的填滿色 */
+.hex[data-type="facility"] {
+    fill: #ffd70090; /* 設施預設金黃色 */
+    fill-opacity: 0.8;
+}
+
+.hex[data-type="buff"] {
+    fill: #00ffff90; /* 人魚島青色 */
+    fill-opacity: 0.8;
+}
+/* 隱藏地標時的樣式類別 (由 JS 控制切換) */
+.hide-landmarks .hex[data-type="facility"],
+.hide-landmarks .hex[data-type="buff"] {
+    fill: unset;
+}
+/* 確保公會邊框持續顯示 (這是我們之前做的面狀邊緣) */
+.guild-outline {
+    pointer-events: none;
+    z-index: 10;
 }
 .hex-obstacle {
     /* stroke: #ff0000; */
@@ -208,7 +238,7 @@ svg { /*容器背景*/
 .hex-icon {
     pointer-events: none;
     user-select: none;
-    font-size: 18px;
+    font-size: 20px;
     text-anchor: middle;
     dominant-baseline: central;
     fill: white;
@@ -225,4 +255,15 @@ svg { /*容器背景*/
 }
 .hex.is-blocked {
     filter: brightness(1);
+}
+/* 障礙格維持透明，並顯示禁止符號提示 */
+.hex[data-type="obstacle"] {
+    fill: transparent !important;
+    stroke: transparent !important;
+    cursor: not-allowed;
+}
+
+/* 確保滑鼠移上去也不會變色 */
+.hex[data-type="obstacle"]:hover {
+    fill: transparent !important;
 }
