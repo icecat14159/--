@@ -111,6 +111,7 @@ function refreshMapColors() {
             hex.style.fill = GUILD_CONFIG[gId].color;
         }
     });
+    updateIndicators();
 }
 
 function openEditModal(id) {

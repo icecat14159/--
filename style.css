@@ -262,8 +262,26 @@ svg { /*容器背景*/
     stroke: transparent !important;
     cursor: not-allowed;
 }
-
 /* 確保滑鼠移上去也不會變色 */
 .hex[data-type="obstacle"]:hover {
     fill: transparent !important;
+}
+/* 提示箭頭基礎樣式 */
+.indicator-group {
+    pointer-events: none;
+    font-size: 14px;
+    font-weight: bold;
+    user-select: none;
+    stroke: black;
+    stroke-width: 0.3px;
+}
+
+.arrow-green {
+    fill: #00ff00;
+    filter: drop-shadow(0 0 2px #000);
+}
+
+.arrow-red {
+    fill: #ff0000;
+    filter: drop-shadow(0 0 2px #000);
 }

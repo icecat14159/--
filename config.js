@@ -26,7 +26,7 @@ const TILE_TYPES = {
     OBSTACLE: 'wall'   // 障礙物
 };
 
-const MAP_FEATURES = {  //!!!!!!!!!!座標需設定!!!!!!!!!!
+const MAP_FEATURES = {
     // 公會據點 (16家)
     BASE: [ 
         { q: 1, r: 3, guildId: 1},

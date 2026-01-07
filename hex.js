@@ -70,6 +70,7 @@ function occupyTile(element) {
 
     updateConnectivity();
     if (typeof updateGuildOutlines === "function") updateGuildOutlines();
+    updateIndicators();
 }
 
 const gridLayer = document.getElementById("grid-layer");
