@@ -275,7 +275,6 @@ svg { /*容器背景*/
     stroke: black;
     stroke-width: 0.3px;
 }
-
 .arrow-green {
     fill: #00ff00;
     filter: drop-shadow(0 0 2px #000);
@@ -284,4 +283,18 @@ svg { /*容器背景*/
 .arrow-red {
     fill: #ff0000;
     filter: drop-shadow(0 0 2px #000);
+}
+/* 1. 告訴瀏覽器 viewport 會頻繁變換，請啟用硬體加速 */
+#viewport {
+    will-change: transform;
+    /* 確保變換中心點正確*/
+    transform-origin: 0 0; 
+}
+/* 2. 當地圖處於「互動中」狀態時，強制關閉所有濾鏡與陰影 */
+.is-interacting .guild-outline,
+.is-interacting .arrow-green,
+.is-interacting .arrow-red,
+.is-interacting .hex-facility,
+.is-interacting .hex-buff {
+    filter: none !important; /* 關鍵：移除模糊運算 */
 }

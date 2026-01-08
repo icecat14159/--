@@ -63,11 +63,14 @@ function occupyTile(element) {
 
     // 根據當前「隱藏地標」開關決定填色
     if (!isLandmarksHidden && (type === FEATURE_TYPES.FACILITY || type === FEATURE_TYPES.BUFF)) {
-        element.style.fill = (type === FEATURE_TYPES.FACILITY) ? "#ffd700" : "#00ffff";
+        element.style.fill = (type === FEATURE_TYPES.FACILITY) ? "#ffd70090" : "#00ffff90";
     } else {
         element.style.fill = GUILD_CONFIG[guildId].color;
     }
+}
 
+// 建立一個統一執行重消耗運算的函式
+function refreshAllLogic() {
     updateConnectivity();
     if (typeof updateGuildOutlines === "function") updateGuildOutlines();
     updateIndicators();
@@ -130,10 +133,13 @@ for (let q = 0; q < COLS; q++) {
         if (getQuickFillStatus()) return; // 快速模式下交由 mouseenter 處理
         
         // 判斷是否為拖曳而非點擊
-        if (Math.abs(e.clientX - (startX + translateX)) > 5 || 
-            Math.abs(e.clientY - (startY + translateY)) > 5) return;
+        const distMoved = Math.hypot(translateX - dragStartTranslateX, translateY - dragStartTranslateY);
 
+        if (distMoved > 5) {
+            return; // 如果地圖動了，這就是拖曳，直接結束，不執行佔領
+        }
         occupyTile(this);
+        refreshAllLogic();
     });
 
     gridLayer.appendChild(hex);
@@ -269,8 +275,18 @@ function clampTranslate() {
 }
 
 // --- 滾輪縮放 ---
+let wheelTimeout;
 svg.addEventListener("wheel", (e) => {
   e.preventDefault(); // 防止網頁捲動
+
+  if (!svg.classList.contains("is-interacting")) {
+      svg.classList.add("is-interacting");
+  }
+
+  clearTimeout(wheelTimeout);
+  wheelTimeout = setTimeout(() => {
+      svg.classList.remove("is-interacting");
+  }, 100);
 
   const zoomSpeed = 0.1;
   const delta = e.deltaY > 0 ? -zoomSpeed : zoomSpeed;
@@ -295,7 +311,9 @@ svg.addEventListener("wheel", (e) => {
 let isMouseDown = false; // 新增全域變數
 // --- 滑鼠拖曳 ---
 svg.addEventListener("mousedown", (e) => {
-  isMouseDown = true; // 紀錄滑鼠按下
+  isMouseDown = true;
+  dragStartTranslateX = translateX;
+  dragStartTranslateY = translateY;
   // 如果快速佔領關閉，才執行原本的拖曳初始化
   if (!getQuickFillStatus()) {
     if (e.target.tagName === "svg" || e.target.tagName === "polygon") {
@@ -303,6 +321,7 @@ svg.addEventListener("mousedown", (e) => {
         startX = e.clientX - translateX;
         startY = e.clientY - translateY;
         svg.style.cursor = "grabbing";
+        svg.classList.add("is-interacting");
     }
   } else if (e.target.tagName === "polygon") {
     // 快速模式下，點下去的那一格也要佔領
@@ -321,9 +340,13 @@ window.addEventListener("mousemove", (e) => {
 });
 
 window.addEventListener("mouseup", () => {
+  if (isMouseDown) {
+      refreshAllLogic();
+  }
   isMouseDown = false;
   isDragging = false;
   svg.style.cursor = "default";
+  svg.classList.remove("is-interacting");
 });
 
 function updateBackgroundSize() {

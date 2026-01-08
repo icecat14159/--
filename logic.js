@@ -116,108 +116,92 @@ function updateGuildOutlines() {
     });
 }
 
-// logic.js
-
 function updateIndicators() {
-    // 1. 清除舊圖標
     document.querySelectorAll(".indicator-group").forEach(el => el.remove());
-
-    const allHexes = document.querySelectorAll('.hex');
     
-    // 針對 1-16 個公會分別處理
-    for (let gId = 1; gId <= 16; gId++) {
-        const guildHexes = Array.from(allHexes).filter(h => parseInt(h.dataset.guildId) === gId);
-        if (guildHexes.length === 0) continue;
+    // 只獲取有被佔領的格子，大幅減少循環次數
+    const occupiedHexes = Array.from(document.querySelectorAll('.hex[data-guild-id]:not([data-guild-id="0"])'));
+    const visitedGlobal = new Set();
 
-        const visited = new Set();
+    occupiedHexes.forEach(startHex => {
+        const startCoord = `${startHex.dataset.q},${startHex.dataset.r}`;
+        if (visitedGlobal.has(startCoord)) return;
 
-        // 2. 使用 BFS 找出該公會所有的「獨立連通區塊 (Components)」
-        guildHexes.forEach(startHex => {
-            const startCoord = `${startHex.dataset.q},${startHex.dataset.r}`;
-            if (visited.has(startCoord)) return;
+        const gId = startHex.dataset.guildId;
+        const component = [];
+        const queue = [startCoord];
+        visitedGlobal.add(startCoord);
 
-            const component = []; // 存放目前這個區塊的所有格子
-            const queue = [startCoord];
-            visited.add(startCoord);
+        let hasBaseConnection = false;
+        let buffInComponent = 0;
 
-            let hasBaseConnection = false; // 該區塊是否連通據點
-            let buffInComponent = 0;       // 該區塊內含有幾座人魚島
+        while (queue.length > 0) {
+            const coord = queue.shift();
+            const [q, r] = coord.split(',').map(Number);
+            const hex = document.querySelector(`.hex[data-q="${q}"][data-r="${r}"]`);
+            
+            component.push(hex);
+            if (hex.dataset.type === FEATURE_TYPES.BASE) hasBaseConnection = true;
+            if (hex.dataset.type === FEATURE_TYPES.BUFF) buffInComponent++;
 
-            // BFS 搜尋區塊範圍
-            while (queue.length > 0) {
-                const coord = queue.shift();
-                const [q, r] = coord.split(',').map(Number);
-                const hex = document.querySelector(`.hex[data-q="${q}"][data-r="${r}"]`);
-                
-                component.push(hex);
-                
-                // 判斷該區塊屬性
-                if (hex.dataset.type === FEATURE_TYPES.BASE) hasBaseConnection = true;
-                if (hex.dataset.type === FEATURE_TYPES.BUFF) buffInComponent++;
-
-                getNeighbors(q, r).forEach(n => {
-                    const nCoord = `${n.q},${n.r}`;
-                    const nHex = document.querySelector(`.hex[data-q="${n.q}"][data-r="${n.r}"]`);
-                    // 只有相同公會且未訪問過的格子才加入同一個區塊
-                    if (nHex && nHex.dataset.guildId == gId && !visited.has(nCoord)) {
-                        visited.add(nCoord);
-                        queue.push(nCoord);
-                    }
-                });
-            }
-
-            // 3. 根據該區塊分析結果，為區塊內所有格子繪製圖標
-                        // logic.js 中的渲染邏輯修正
-
-            // 3. 根據該區塊分析結果，為區塊內所有格子繪製圖標
-            component.forEach(hex => {
-                const type = hex.dataset.type;
-                if (type === FEATURE_TYPES.BASE) return; 
-
-                const q = parseInt(hex.dataset.q);
-                const r = parseInt(hex.dataset.r);
-                const { x, y } = hexToPixel(q, r);
-                const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
-                g.setAttribute("class", "indicator-group");
-
-                // 基礎偏移位置（原右下角參考點）
-                const baseX = x + 10;
-                const baseY = y + 15;
-
-                // --- 1. 處理綠色上三角 (加成) ---
-                if (buffInComponent > 0) {
-                    const textEl = document.createElementNS("http://www.w3.org/2000/svg", "text");
-                    textEl.setAttribute("y", baseY);
-                    textEl.setAttribute("class", "arrow-green");
-                    textEl.setAttribute("text-anchor", "start");
-
-                    if (buffInComponent === 1) {
-                        textEl.setAttribute("x", baseX);
-                        textEl.textContent = "▲";
-                    } else {
-                        // 雙箭頭：將起始點向左移 10px，讓兩個箭頭並排在格子內
-                        textEl.setAttribute("x", baseX - 14);
-                        textEl.textContent = "▲▲";
-                    }
-                    g.appendChild(textEl);
-                }
-
-                // --- 2. 處理紅色下三角 (封鎖) ---
-                if (!hasBaseConnection) {
-                    const textEl = document.createElementNS("http://www.w3.org/2000/svg", "text");
-                    // 固定在綠色圖標下方 12px
-                    textEl.setAttribute("x", baseX);
-                    textEl.setAttribute("y", baseY + 12); 
-                    textEl.setAttribute("class", "arrow-red");
-                    textEl.setAttribute("text-anchor", "start");
-                    textEl.textContent = "▼";
-                    g.appendChild(textEl);
-                }
-
-                if (g.hasChildNodes()) {
-                    document.getElementById("effect-layer").appendChild(g);
+            getNeighbors(q, r).forEach(n => {
+                const nCoord = `${n.q},${n.r}`;
+                const nHex = document.querySelector(`.hex[data-q="${n.q}"][data-r="${n.r}"]`);
+                if (nHex && nHex.dataset.guildId == gId && !visitedGlobal.has(nCoord)) {
+                    visitedGlobal.add(nCoord);
+                    queue.push(nCoord);
                 }
             });
-        });
-    }
+        }
+
+        // 渲染邏輯 (保持原有垂直排列顯示方式)
+        component.forEach(hex => {
+            const type = hex.dataset.type;
+            if (type === FEATURE_TYPES.BASE) return; 
+
+            const q = parseInt(hex.dataset.q);
+            const r = parseInt(hex.dataset.r);
+            const { x, y } = hexToPixel(q, r);
+            const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+            g.setAttribute("class", "indicator-group");
+
+            // 基礎偏移位置（原右下角參考點）
+            const baseX = x + 10;
+            const baseY = y + 15;
+
+            // --- 1. 處理綠色上三角 (加成) ---
+            if (buffInComponent > 0) {
+                const textEl = document.createElementNS("http://www.w3.org/2000/svg", "text");
+                textEl.setAttribute("y", baseY);
+                textEl.setAttribute("class", "arrow-green");
+                textEl.setAttribute("text-anchor", "start");
+
+                if (buffInComponent === 1) {
+                    textEl.setAttribute("x", baseX);
+                    textEl.textContent = "▲";
+                } else {
+                    // 雙箭頭：將起始點向左移 10px，讓兩個箭頭並排在格子內
+                    textEl.setAttribute("x", baseX - 14);
+                    textEl.textContent = "▲▲";
+                }
+                g.appendChild(textEl);
+            }
+
+            // --- 2. 處理紅色下三角 (封鎖) ---
+            if (!hasBaseConnection) {
+                const textEl = document.createElementNS("http://www.w3.org/2000/svg", "text");
+                // 固定在綠色圖標下方 12px
+                textEl.setAttribute("x", baseX);
+                textEl.setAttribute("y", baseY + 12); 
+                textEl.setAttribute("class", "arrow-red");
+                textEl.setAttribute("text-anchor", "start");
+                textEl.textContent = "▼";
+                g.appendChild(textEl);
+            }
+
+            if (g.hasChildNodes()) {
+                document.getElementById("effect-layer").appendChild(g);
+            }
+        });    
+    });
 }
