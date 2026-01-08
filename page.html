@@ -12,6 +12,12 @@
         <div id="tool-panel">
           <button id="quick-fill-toggle" onclick="toggleQuickFill()">快速佔領：OFF</button>
           <button id="landmark-toggle" onclick="toggleLandmarks()">隱藏地標：OFF</button>
+          <div style="margin-top: 10px; border-top: 1px solid #666; padding-top: 5px;">
+            <span style="color: white; font-size: 14px;">地圖階段：</span><br>
+            <button class="phase-btn" onclick="setPhase(1)">一期</button>
+            <button class="phase-btn" onclick="setPhase(2)">二期</button>
+            <button class="phase-btn" onclick="setPhase(3)">三期</button>
+          </div>
         </div>
         <div id="guild-selector"></div>
       </div>
@@ -30,9 +36,17 @@
     </div>
 
     <svg id="hexMap">
+      <defs>
+        <pattern id="hatchPattern" patternUnits="userSpaceOnUse" width="10" height="10">
+          <path d="M 0,10 l 10,-10 M -2,2 l 4,-4 M 8,12 l 4,-4" 
+                stroke="#222" stroke-width="3" opacity="0.7"/>
+        </pattern>
+      </defs>
+
       <g id="viewport">
         <image id="map-background" href="map-bg.jpg" x="0" y="0"></image>
         <g id="grid-layer"></g> 
+        <g id="restriction-layer"></g>
         <g id="effect-layer"></g>
       </g>
     </svg>

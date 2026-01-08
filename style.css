@@ -211,19 +211,14 @@ svg { /*容器背景*/
     stroke-width: 2;
 }
 /* 設施與人魚島的填滿色 */
-.hex[data-type="facility"] {
+#hexMap:not(.hide-landmarks) .hex[data-type="facility"] {
     fill: #ffd70090; /* 設施預設金黃色 */
     fill-opacity: 0.8;
 }
 
-.hex[data-type="buff"] {
+#hexMap:not(.hide-landmarks) .hex[data-type="buff"] {
     fill: #00ffff90; /* 人魚島青色 */
     fill-opacity: 0.8;
-}
-/* 隱藏地標時的樣式類別 (由 JS 控制切換) */
-.hide-landmarks .hex[data-type="facility"],
-.hide-landmarks .hex[data-type="buff"] {
-    fill: unset;
 }
 /* 確保公會邊框持續顯示 (這是我們之前做的面狀邊緣) */
 .guild-outline {
@@ -265,6 +260,29 @@ svg { /*容器背景*/
 /* 確保滑鼠移上去也不會變色 */
 .hex[data-type="obstacle"]:hover {
     fill: transparent !important;
+}
+/* 禁區遮罩樣式 */
+.hex-restricted-overlay {
+    fill: url(#hatchPattern); /* 引用 HTML 定義的斜線 */
+    pointer-events: none;     /* 讓滑鼠點擊能穿透遮罩 (但我們會用 JS 擋住操作) */
+    stroke: #555;             /* 禁區邊框顏色 */
+    stroke-width: 2;
+}
+.hex[data-restricted="true"] {
+    cursor: not-allowed;
+}
+.phase-btn {
+    background: #444;
+    color: white;
+    border: 1px solid #666;
+    border-radius: 3px;
+    padding: 4px 8px;
+    margin: 2px;
+    cursor: pointer;
+}
+.phase-btn.active {
+    background: #007bff;
+    border-color: white;
 }
 /* 提示箭頭基礎樣式 */
 .indicator-group {

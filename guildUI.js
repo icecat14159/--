@@ -101,17 +101,23 @@ function refreshMapColors() {
     const allHexes = document.querySelectorAll('.hex');
     allHexes.forEach(hex => {
         const type = hex.dataset.type;
-        const gId = parseInt(hex.dataset.guildId || 0);
+        // 確保轉為整數，避免型別錯誤
+        const gId = parseInt(hex.dataset.guildId || 0); 
         
+        // 判斷是否顯示地標色
         if (!isLandmarksHidden && (type === 'facility' || type === 'buff')) {
-            // 顯示地標專屬色
             hex.style.fill = (type === 'facility') ? "#ffd70090" : "#00ffff90";
         } else {
-            // 顯示所屬公會顏色 (gId 0 為公海色)
-            hex.style.fill = GUILD_CONFIG[gId].color;
+            // 顯示公會色
+            if (gId === 0) {
+                // 關鍵修正：公海 ID 為 0 時，移除行內樣式
+                hex.style.fill = "";
+            } else {
+                hex.style.fill = GUILD_CONFIG[gId].color;
+            }
         }
     });
-    updateIndicators();
+    if (typeof updateIndicators === "function") updateIndicators();
 }
 
 function openEditModal(id) {
@@ -196,6 +202,20 @@ function openEditModal(id) {
     });
 
     document.getElementById("edit-modal").style.display = "flex";
+}
+
+function setPhase(p) {
+    if (typeof updateMapPhase === "function") {
+        updateMapPhase(p);
+    }
+    
+    // 按鈕視覺回饋 (Optional)
+    document.querySelectorAll('.phase-btn').forEach(btn => {
+        btn.classList.remove('active');
+        if (btn.innerText.includes(p === 1 ? "一" : p === 2 ? "二" : "三")) {
+            btn.classList.add('active');
+        }
+    });
 }
 
 // 初始化

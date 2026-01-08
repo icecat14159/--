@@ -53,19 +53,32 @@ function getFeatureAt(q, r) {
 }
 
 // 重構：統一的佔領函式
-function occupyTile(element) {
+function occupyTile(element, isClickAction = false) {
+    if (element.dataset.restricted === "true") {
+        return;
+    }
     const type = element.dataset.type;
-    // 據點與障礙不可佔領
     if (type === FEATURE_TYPES.BASE || type === FEATURE_TYPES.OBSTACLE) return;
 
     const guildId = getCurrentGuildId();
     element.dataset.guildId = guildId;
 
-    // 根據當前「隱藏地標」開關決定填色
-    if (!isLandmarksHidden && (type === FEATURE_TYPES.FACILITY || type === FEATURE_TYPES.BUFF)) {
+    // 顏色處理邏輯
+    const isLandmark = (type === FEATURE_TYPES.FACILITY || type === FEATURE_TYPES.BUFF);
+    
+    // 如果現在要顯示地圖上的地標顏色 (且地標未隱藏)
+    if (!isLandmarksHidden && isLandmark) {
         element.style.fill = (type === FEATURE_TYPES.FACILITY) ? "#ffd70090" : "#00ffff90";
-    } else {
-        element.style.fill = GUILD_CONFIG[guildId].color;
+    } 
+    // 如果是普通佔領，或隱藏地標模式
+    else {
+        if (guildId === 0) {
+            // 關鍵修正：如果是公海，清除行內樣式，讓 CSS :hover 生效
+            element.style.fill = ""; 
+        } else {
+            // 其他公會則設定顏色
+            element.style.fill = GUILD_CONFIG[guildId].color;
+        }
     }
 }
 
@@ -384,3 +397,8 @@ initMapPosition();
 // 如果視窗大小改變，重新調整位置
 window.addEventListener('resize', initMapPosition);
 
+setTimeout(() => {
+    if (typeof updateMapPhase === "function") {
+        updateMapPhase(1); // 預設開啟第一期
+    }
+}, 100);

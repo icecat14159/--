@@ -205,3 +205,76 @@ function updateIndicators() {
         });    
     });
 }
+
+//切換地圖階段
+let currentPhase = 1; // 預設為全開放 (或設為 1)
+function updateMapPhase(phase) {
+    currentPhase = phase;
+    
+    // 1. 清除舊的禁區遮罩與標記
+    document.getElementById("restriction-layer").innerHTML = "";
+    document.querySelectorAll('.hex').forEach(hex => {
+        hex.dataset.restricted = "false";
+        // 移除禁止游標樣式（如果之前是用 class 控制）
+    });
+
+    let radius = 0;
+    if (phase === 1) radius = 7;
+    else if (phase === 2) radius = 4;
+
+    // 2. 使用 BFS 從中心點 (14, 14) 擴散找出禁區
+    if (radius > 0) {
+        const centerQ = 14;
+        const centerR = 14;
+        const centerId = `${centerQ},${centerR}`;
+
+        const restrictedSet = new Set();
+        const queue = [{ q: centerQ, r: centerR, dist: 0 }];
+        restrictedSet.add(centerId);
+
+        while (queue.length > 0) {
+            const { q, r, dist } = queue.shift();
+
+            // 標記此格為禁區
+            markAsRestricted(q, r);
+
+            if (dist < radius) {
+                getNeighbors(q, r).forEach(n => {
+                    const nId = `${n.q},${n.r}`;
+                    if (!restrictedSet.has(nId)) {
+                        // 邊界檢查
+                        if (n.q >= 0 && n.q < COLS && n.r >= 0 && n.r < ROWS) {
+                            restrictedSet.add(nId);
+                            queue.push({ q: n.q, r: n.r, dist: dist + 1 });
+                        }
+                    }
+                });
+            }
+        }
+    }
+    updateConnectivity();
+    if (typeof updateGuildOutlines === "function") updateGuildOutlines();
+    updateIndicators();
+}
+
+//輔助：視覺化禁區
+function markAsRestricted(q, r) {
+    const hex = document.querySelector(`.hex[data-q="${q}"][data-r="${r}"]`);
+    if (!hex) return;
+
+    // 邏輯標記
+    hex.dataset.restricted = "true";
+
+    // 視覺遮罩 (建立一個疊在上面的多邊形)
+    const { x, y } = hexToPixel(q, r);
+    const overlay = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
+    overlay.setAttribute("points", hexPoints(x, y, HEX_SIZE)); // 沿用 hex.js 的 hexPoints
+    overlay.setAttribute("class", "hex-restricted-overlay");
+    
+    document.getElementById("restriction-layer").appendChild(overlay);
+
+    if (hex.dataset.type !== FEATURE_TYPES.BASE && hex.dataset.guildId !== "0") {
+        hex.dataset.guildId = "0";
+        hex.style.fill = "";
+    }
+}
