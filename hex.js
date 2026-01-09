@@ -87,6 +87,7 @@ function refreshAllLogic() {
     updateConnectivity();
     if (typeof updateGuildOutlines === "function") updateGuildOutlines();
     updateIndicators();
+    if (typeof updateLeaderboard === "function") updateLeaderboard();
 }
 
 const gridLayer = document.getElementById("grid-layer");

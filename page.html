@@ -9,17 +9,25 @@
     <button id="menu-toggle" onclick="toggleSidebar()">☰</button>
     <div id="ui-sidebar" class="sidebar-open">
       <div id="ui-panel">
+        <div id="sidebar-tabs">
+          <button class="tab-btn active" onclick="switchTab('selector')">公會列表</button>
+          <button class="tab-btn" onclick="switchTab('leaderboard')">設施統計</button>
+        </div>
+
         <div id="tool-panel">
           <button id="quick-fill-toggle" onclick="toggleQuickFill()">快速佔領：OFF</button>
           <button id="landmark-toggle" onclick="toggleLandmarks()">隱藏地標：OFF</button>
           <div style="margin-top: 10px; border-top: 1px solid #666; padding-top: 5px;">
-            <span style="color: white; font-size: 14px;">地圖階段：</span><br>
-            <button class="phase-btn" onclick="setPhase(1)">一期</button>
-            <button class="phase-btn" onclick="setPhase(2)">二期</button>
-            <button class="phase-btn" onclick="setPhase(3)">三期</button>
-          </div>
+              <span style="color: white; font-size: 14px;">地圖階段：</span><br>
+              <button class="phase-btn" onclick="setPhase(1)">一期</button>
+              <button class="phase-btn" onclick="setPhase(2)">二期</button>
+              <button class="phase-btn" onclick="setPhase(3)">三期</button>
+          </div><br>
         </div>
-        <div id="guild-selector"></div>
+
+        <div id="guild-selector" class="tab-content active"></div>
+        
+        <div id="leaderboard-panel" class="tab-content" style="display: none;"></div>
       </div>
     </div>
 
