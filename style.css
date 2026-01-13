@@ -52,7 +52,7 @@ body { /*背景*/
   position: absolute;
   top: 0;
   right: 0;
-  width: 250px;
+  width: 280px;
   height: 100vh;
   background: rgba(30, 30, 30, 0.9);
   z-index: 150;
@@ -77,10 +77,10 @@ body { /*背景*/
   gap: 8px;
 }
 /* 自定義捲動條樣式（美化） */
-#guild-selector::-webkit-scrollbar {
+.tab-content::-webkit-scrollbar {
   width: 6px;
 }
-#guild-selector::-webkit-scrollbar-thumb {
+.tab-content::-webkit-scrollbar-thumb {
   background: #555;
   border-radius: 3px;
 }
@@ -392,4 +392,29 @@ svg { /*容器背景*/
 .lb-count {
     font-weight: bold;
     color: #fff;
+}
+.lb-footer {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 10px;
+    background: rgba(0, 0, 0, 0.3); /* 比列表底色深一點 */
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    font-size: 12px;
+    color: #aaa;
+    white-space: nowrap;
+}
+.lb-footer div {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+.score-p {
+    color: #4db8ff; /* 定給分用藍色系 */
+    font-weight: bold;
+    font-size: 13px;
+}
+.score-f {
+    color: #ffcc00; /* 結算分用金色系 */
+    font-weight: bold;
+    font-size: 13px;
 }

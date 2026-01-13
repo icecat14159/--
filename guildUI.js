@@ -234,18 +234,29 @@ function switchTab(tabName) {
     // 2. 切換內容顯示
     const selector = document.getElementById("guild-selector");
     const leaderboard = document.getElementById("leaderboard-panel");
+    const toolPanel = document.getElementById("tool-panel");
 
     if (tabName === 'selector') {
         selector.style.display = 'flex';
         leaderboard.style.display = 'none';
+        if (toolPanel) toolPanel.style.display = 'block';
     } else {
         selector.style.display = 'none';
         leaderboard.style.display = 'block';
+        if (toolPanel) toolPanel.style.display = 'none';
         updateLeaderboard(); // 切換過來時刷新數據
     }
 }
 
 // --- 排行榜統計邏輯 ---
+// 定義設施分數表
+const SCORE_RULES = {
+    "水手酒館": { periodic: 100, final: 200 },
+    "海上餐廳": { periodic: 150, final: 300 },
+    "沈船點":   { periodic: 270, final: 1080 },
+    "珍寶點":   { periodic: 800, final: 9600 },
+    "人魚島":   { periodic: 0,   final: 0 }
+};
 function updateLeaderboard() {
     const panel = document.getElementById("leaderboard-panel");
     if (panel.style.display === 'none') return;
@@ -254,9 +265,11 @@ function updateLeaderboard() {
     
     // 統計資料結構：
     // stats[gId] = { 
-    //    validTotal: 0,      // 有效(未封鎖)設施總數 -> 用於公會排序
-    //    maxPriority: 0,     // 有效設施的最高權重 -> 用於公會排序
-    //    items: { "設施名": { count: 0, priority: 0 } } // 用於內部列表顯示與排序
+    //    validTotal: 0,      // 有效數量 (排序用)
+    //    maxPriority: 0,     // 最高權重 (排序用)
+    //    periodicScore: 0,   // 定給分總計
+    //    finalScore: 0,      // 結算分總計
+    //    items: { "設施名": { count: 0, priority: 0 } } 
     // }
     const stats = {};
     const allHexes = document.querySelectorAll('.hex');
@@ -279,7 +292,13 @@ function updateLeaderboard() {
         if (type !== 'facility' && type !== 'buff') return;
 
         if (!stats[gId]) {
-            stats[gId] = { validTotal: 0, maxPriority: 0, items: {} };
+            stats[gId] = { 
+                validTotal: 0, 
+                maxPriority: 0, 
+                periodicScore: 0, 
+                finalScore: 0, 
+                items: {} 
+            };
         }
 
         // 取得名稱與等級
@@ -307,10 +326,6 @@ function updateLeaderboard() {
 
         if (isBlocked) {
             displayName = `${name}(被封鎖)`;
-            // 被封鎖的設施：
-            // 1. 不計入 validTotal (公會排序用)
-            // 2. 不更新 maxPriority (公會排序用)
-            // 3. 內部列表排序權重設為 -1 (讓它沉底)
             itemPriority = -1; 
         } else {
             // 有效設施：更新公會的統計數據
@@ -318,6 +333,10 @@ function updateLeaderboard() {
             if (itemPriority > stats[gId].maxPriority) {
                 stats[gId].maxPriority = itemPriority;
             }
+            // --- 累加分數 ---
+            const rules = SCORE_RULES[name] || { periodic: 0, final: 0 };
+            stats[gId].periodicScore += rules.periodic;
+            stats[gId].finalScore += rules.final;
         }
 
         // 統計該項目的數量 (分開統計 "水手酒館" 與 "水手酒館(被封鎖)")
@@ -328,17 +347,14 @@ function updateLeaderboard() {
     });
 
     // 2. 排序公會
-    // 規則：只看「有效佔領」。如果全部被封鎖，validTotal 為 0，會排在最後。
-    // 過濾條件：該公會必須至少「佔領」一個設施 (不論封鎖與否都顯示，但排序依據有效值)
     const sortedGuilds = Object.keys(stats)
         .map(id => parseInt(id))
-        .filter(id => Object.keys(stats[id].items).length > 0) // 只要有佔領就顯示
+        .filter(id => Object.keys(stats[id].items).length > 0)
         .sort((a, b) => {
             // 先比有效設施的最高等級
             const pA = stats[a].maxPriority;
             const pB = stats[b].maxPriority;
             if (pA !== pB) return pB - pA; 
-            
             // 再比有效設施的總數
             return stats[b].validTotal - stats[a].validTotal;
         });
@@ -390,6 +406,16 @@ function updateLeaderboard() {
         });
 
         group.appendChild(list);
+        //計分資訊
+        if (data.periodicScore > 0 || data.finalScore > 0) {
+            const footer = document.createElement("div");
+            footer.className = "lb-footer";
+            footer.innerHTML = `
+                <div>定給分 <span class="score-p">+${data.periodicScore}</span>/10 min</div>
+                <div>結算分 <span class="score-f">+${data.finalScore}</span></div>
+            `;
+            group.appendChild(footer);
+        }
         panel.appendChild(group);
     });
 
