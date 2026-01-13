@@ -423,3 +423,47 @@ function updateLeaderboard() {
         panel.innerHTML = "<div style='padding:20px; color:#666; text-align:center;'>尚無公會佔領設施</div>";
     }
 }
+
+// --- 戰術標記狀態 ---
+let currentMarkerTool = null; // null, 'attack', 'defend', 'ban', 'warn', 'clear'
+let currentMarkerValue = "";
+
+function selectMarkerTool(type) {
+    // 如果點擊已選中的工具，則取消選取（回到一般佔領模式）
+    if (currentMarkerTool === type) {
+        currentMarkerTool = null;
+    } else {
+        currentMarkerTool = type;
+    }
+
+    // 更新 UI 按鈕狀態
+    document.querySelectorAll('.marker-btn').forEach(btn => {
+        btn.classList.remove('active');
+        if (currentMarkerTool === type && btn.classList.contains(type)) {
+            btn.classList.add('active');
+        }
+    });
+
+    // 更新文字提示
+    const statusText = document.getElementById("marker-status");
+    if (!currentMarkerTool) {
+        statusText.innerText = "目前模式：無 (點擊佔領)";
+        statusText.style.color = "#aaa";
+    } else {
+        const names = { attack: "進攻", defend: "防守", ban: "禁止", warn: "注意", clear: "清除" };
+        statusText.innerText = `目前模式：${names[type]}`;
+        statusText.style.color = "#fff";
+    }
+}
+
+function updateMarkerValue(val) {
+    currentMarkerValue = val.trim();
+}
+
+// 提供給 hex.js 讀取
+function getMarkerToolStatus() {
+    return {
+        type: currentMarkerTool,
+        value: currentMarkerValue
+    };
+}

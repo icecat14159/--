@@ -152,8 +152,13 @@ for (let q = 0; q < COLS; q++) {
         if (distMoved > 5) {
             return; // 如果地圖動了，這就是拖曳，直接結束，不執行佔領
         }
-        occupyTile(this);
-        refreshAllLogic();
+        const markerStatus = getMarkerToolStatus(); 
+        if (markerStatus.type) {
+            placeMarker(this, markerStatus.type, markerStatus.value);
+        } else {
+            occupyTile(this);
+            refreshAllLogic();
+        }
     });
 
     gridLayer.appendChild(hex);
@@ -197,6 +202,103 @@ function addSpecialEffect(cx, cy, className, iconText) {
     text.setAttribute("class", "hex-icon");
     text.textContent = iconText;
     effectLayer.appendChild(text);
+}
+
+// --- 標記渲染函式 ---
+function placeMarker(hexElement, type, value) {
+    const q = parseInt(hexElement.dataset.q);
+    const r = parseInt(hexElement.dataset.r);
+    
+    // 1. 清除該格既有的標記
+    const existingMarker = document.getElementById(`marker-${q}-${r}`);
+    if (existingMarker) {
+        existingMarker.remove();
+    }
+
+    // 如果是清除模式，做完刪除就結束
+    if (type === 'clear') return;
+
+    // 2. 準備繪製參數
+    const { x, y } = hexToPixel(q, r);
+    // const pinX = x;
+    // const pinY = y - 20;
+    const offsetX = 0;
+    const offsetY = -HEX_SIZE * 0.45;
+    const pinX = x + offsetX;
+    const pinY = y + offsetY;
+
+    // 定義顏色與圖示
+    const config = {
+        attack: { 
+            color: "#fd7e14",
+            // 雙劍交叉
+            path: "M 4 21 L 2 19 L 4 17 L 1 14 L 3 12 L 6 15 L 18 3 L 20 3 L 20 5 L 8 17 L 11 20 L 9 22 L 6 19 Z M 6 3 L 4 3 L 4 5 L 10 11 L 12 9 Z M 12 13 L 16 17 L 13 20 L 15 22 L 18 19 L 20 21 L 22 19 L 20 17 L 23 14 L 21 12 L 18 15 L 14 11 Z"
+        },
+        defend: { 
+            color: "#007bff", 
+            // 盾牌
+            path: "M12,1L3,5v6c0,5.55,3.84,10.74,9,12c5.16-1.26,9-6.45,9-12V5L12,1z M12,11.99h7c-0.53,4.12-3.28,7.79-7,8.94V12H5V6.3 l7-3.11V11.99z"
+        },
+        ban: { 
+            color: "#dc3545", 
+            // 禁止標誌
+            path: "M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8 0-1.84.62-3.54 1.66-4.92L16.92 18.34C15.54 19.38 13.84 20 12 20zm8-8c0 1.84-.62 3.54-1.66 4.92L7.08 5.66C8.46 4.62 10.16 4 12 4c4.41 0 8 3.59 8 8z"
+        },
+        warn: { 
+            color: "#ffc107", 
+            // 注意三角
+            path: "M1,21h22L12,2L1,21z M13,18h-2v-2h2V18z M13,14h-2v-4h2V14z"
+        }
+    };
+    const settings = config[type];
+    if (!settings) return;
+
+    const group = document.createElementNS("http://www.w3.org/2000/svg", "g");
+    group.setAttribute("id", `marker-${q}-${r}`);
+    group.setAttribute("class", "map-marker-group");
+    group.setAttribute("transform", `translate(${pinX}, ${pinY})`);
+
+    // --- 3. 繪製圖釘的「針尖」(灰色小三角形，製造插入感) ---
+    const pinPoint = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    // 畫一個指向右下方的小尖角
+    pinPoint.setAttribute("d", "M -5,0 L 0,13 L 5,0 Z");
+    pinPoint.setAttribute("fill", "#FFFFFF"); // 針尖金屬色
+    pinPoint.setAttribute("stroke", "#999999");
+    pinPoint.setAttribute("stroke-width", "0.5");
+    // 稍微往下移一點，讓它看起來在圓頭下方
+    pinPoint.setAttribute("transform", "translate(0, 5)");
+    group.appendChild(pinPoint);
+
+    // --- 4. 繪製圖釘的「圓頭」(彩色背景) ---
+    const head = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+    head.setAttribute("cx", 0); // 相對於群組中心
+    head.setAttribute("cy", 0);
+    // 縮小半徑，看起來更像圖釘頭
+    head.setAttribute("r", HEX_SIZE * 0.35); 
+    head.setAttribute("fill", settings.color);
+    head.setAttribute("class", "map-marker-head");
+    group.appendChild(head);
+
+    // 5. 決定顯示內容 (數字優先於圖示)
+    if (value && value.length > 0) {
+        // === 有輸入數字：繪製文字 ===
+        const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+        text.setAttribute("x", 0);
+        text.setAttribute("y", 1);
+        text.setAttribute("class", "map-marker-text");
+        text.textContent = value;
+        text.style.fontSize = (value.length >= 3) ? "9px" : "11px";
+        group.appendChild(text);
+    } else {
+        // === 沒有數字：繪製白色鏤空圖示 ===
+        const iconPath = document.createElementNS("http://www.w3.org/2000/svg", "path");
+        iconPath.setAttribute("d", settings.path);
+        iconPath.setAttribute("fill", "white");
+        iconPath.setAttribute("transform", "scale(0.55) translate(-12, -12)");
+        iconPath.setAttribute("pointer-events", "none");
+        group.appendChild(iconPath);
+    }
+    document.getElementById("mark-layer").appendChild(group);
 }
 
 window.updateMapColors = function(guildId, newColor) {

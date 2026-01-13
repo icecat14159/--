@@ -181,7 +181,7 @@ body { /*背景*/
   align-items: center;
   margin-bottom: 5px;
 }
-svg { /*容器背景*/
+#hexMap { 
     background: #2f3b3f;
     width: 100vw;
     height: 100vh;
@@ -417,4 +417,70 @@ svg { /*容器背景*/
     color: #ffcc00; /* 結算分用金色系 */
     font-weight: bold;
     font-size: 13px;
+}
+/* 標記按鈕容器 */
+.marker-controls {
+    display: flex;
+    gap: 5px;
+    margin-top: 5px;
+}
+/* 標記按鈕通用樣式 */
+.marker-btn {
+    width: 30px;
+    height: 30px;
+    border: 2px solid #555;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.1s;
+}
+.marker-btn:hover {
+    transform: scale(1.1);
+}
+/* 選中狀態：發光邊框 */
+.marker-btn.active {
+    border-color: white;
+    box-shadow: 0 0 5px white;
+}
+/* 各類型按鈕顏色 */
+.marker-btn.attack { background-color: #fd7e14; } /* 橙色 */
+.marker-btn.defend { background-color: #007bff; } /* 藍色 */
+.marker-btn.ban    { background-color: #dc3545; } /* 紅色 */
+.marker-btn.warn   { background-color: #ffc107; } /* 黃色 */
+.marker-btn.clear { background-color: #666; }    /* 灰色 */
+/* 地圖上的標記樣式 */
+.map-marker-group {
+    pointer-events: none; /* 讓點擊穿透，不影響格子操作 */
+}
+.map-marker-bg {
+    stroke: white;
+    stroke-width: 1px;
+    filter: drop-shadow(0 0 2px rgba(0,0,0,0.5));
+}
+/* 整個圖釘群組 */
+.map-marker-group {
+    pointer-events: none;
+    /* 為整個圖釘加上投影，製造「浮起」或「釘入」的立體感 */
+    filter: drop-shadow(1px 2px 2px rgba(0,0,0,0.5));
+    transition: filter 0.2s;
+}
+/* 圖釘圓頭 */
+.map-marker-head {
+    stroke: white;
+    stroke-width: 1.5px; /* 加粗白邊，增加質感 */
+}
+/* 圖釘內的文字/圖示 */
+.map-marker-text {
+    font-size: 11px; /* 預設字體縮小 */
+    font-weight: bold;
+    fill: white;
+    text-anchor: middle;
+    dominant-baseline: central;
+}
+/* 互動優化：拖曳縮放時暫時移除陰影 */
+.is-interacting .map-marker-group {
+    filter: none !important;
 }
