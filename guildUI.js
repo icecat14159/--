@@ -1,39 +1,79 @@
+//當側邊攔開關按鈕按下
+function toggleSidebar(){  
+    const sidebar = document.getElementById("ui-sidebar"); //抓取開關按鈕CSS樣式
+    const toggleBtn = document.getElementById("menu-toggle"); //側邊攔容器樣式
+    
+    if(sidebar.classList.contains("sidebar-open")){ //關閉時顯示選單圖示
+        sidebar.classList.remove("sidebar-open"); //更改狀態
+        sidebar.classList.add("sidebar-closed");
+        toggleBtn.innerText = "☰"; //更改顯示圖示
+    }else{    //開啟時顯示關閉圖示
+        sidebar.classList.remove("sidebar-closed");
+        sidebar.classList.add("sidebar-open");
+        toggleBtn.innerText = "✕";
+    }
+}
+
+//側邊攔分頁切換
+function switchTab(tabName){
+    //切換按鈕狀態
+    document.querySelectorAll('.tab-btn').forEach(btn => { //找出所有 class=tab-btn 物件
+        btn.classList.remove('active'); //先清除狀態
+        if(btn.innerText.includes(tabName === 'selector' ? '列表' : '統計')){ //重新賦予狀態 //!!需改善
+            btn.classList.add('active');
+        }
+    });
+
+    //切換內容顯示
+    const toolPanel = document.getElementById("tool-panel"); //公會列表功能部分CSS
+    const selector = document.getElementById("guild-selector"); //公會列表公會部分CSS
+    const leaderboard = document.getElementById("leaderboard-panel"); //設施統計部分CSS
+
+    if(tabName === 'selector'){
+        toolPanel.style.display = 'block';
+        selector.style.display = 'flex';
+        leaderboard.style.display = 'none';
+    }else{
+        toolPanel.style.display = 'none';
+        selector.style.display = 'none';
+        leaderboard.style.display = 'block';
+        updateLeaderboard(); //切換過來時刷新數據
+    }
+}
+
+let isQuickFillActive = false; //是否啟用快速佔領
+//提供 hex.js 讀取快速佔領啟用狀態
+function getQuickFillStatus(){
+    return isQuickFillActive;
+}
+
+//切換快速佔領
+function toggleQuickFill(){
+    isQuickFillActive = !isQuickFillActive;
+    const btn = document.getElementById("quick-fill-toggle");
+    btn.innerText = `快速佔領：${isQuickFillActive ? "ON" : "OFF"}`; //按鈕文字變化
+    btn.classList.toggle("active", isQuickFillActive); //加上或移除 active 類別
+}
+
+let isLandmarksHidden = false; //是否啟用地標顯示
+//切換地標顯示
+function toggleLandmarks(){
+    isLandmarksHidden = !isLandmarksHidden;
+    const btn = document.getElementById("landmark-toggle");
+    const map = document.getElementById("hexMap");
+    
+    btn.innerText = `隱藏地標：${isLandmarksHidden ? "ON" : "OFF"}`; //按鈕文字變化
+    btn.classList.toggle("active", isLandmarksHidden); //加上或移除 active 類別
+    map.classList.toggle("hide-landmarks", isLandmarksHidden); //加上或移除 hide-landmarks 類別 
+}
+
 // 狀態管理
 let currentGuildId = 0;
 let editingGuildId = null;
 
-// 提供給 hex.js 呼叫的介面
+//提供 hex.js 讀取
 function getCurrentGuildId() {
     return currentGuildId;
-}
-
-let isQuickFillActive = false;
-
-function toggleQuickFill() {
-    isQuickFillActive = !isQuickFillActive;
-    const btn = document.getElementById("quick-fill-toggle");
-    btn.innerText = `快速佔領：${isQuickFillActive ? "ON" : "OFF"}`;
-    btn.classList.toggle("active", isQuickFillActive);
-}
-
-// 提供介面讓 hex.js 讀取狀態
-function getQuickFillStatus() {
-    return isQuickFillActive;
-}
-
-function toggleSidebar() {
-    const sidebar = document.getElementById("ui-sidebar");
-    const toggleBtn = document.getElementById("menu-toggle");
-    
-    if (sidebar.classList.contains("sidebar-open")) {
-        sidebar.classList.remove("sidebar-open");
-        sidebar.classList.add("sidebar-closed");
-        toggleBtn.innerText = "☰"; // 關閉時顯示選單圖示
-    } else {
-        sidebar.classList.remove("sidebar-closed");
-        sidebar.classList.add("sidebar-open");
-        toggleBtn.innerText = "✕"; // 開啟時顯示關閉圖示
-    }
 }
 
 function renderGuildSelectors() {
@@ -77,47 +117,6 @@ function renderGuildSelectors() {
 
         selector.appendChild(wrapper);
     });
-}
-
-let isLandmarksHidden = false;
-
-function toggleLandmarks() {
-    isLandmarksHidden = !isLandmarksHidden;
-    const btn = document.getElementById("landmark-toggle");
-    const map = document.getElementById("hexMap");
-    
-    btn.innerText = `隱藏地標：${isLandmarksHidden ? "ON" : "OFF"}`;
-    btn.classList.toggle("active", isLandmarksHidden);
-
-    if (isLandmarksHidden) {
-        map.classList.add("hide-landmarks");
-    } else {
-        map.classList.remove("hide-landmarks");
-    }
-    refreshMapColors(); 
-}
-
-function refreshMapColors() {
-    const allHexes = document.querySelectorAll('.hex');
-    allHexes.forEach(hex => {
-        const type = hex.dataset.type;
-        // 確保轉為整數，避免型別錯誤
-        const gId = parseInt(hex.dataset.guildId || 0); 
-        
-        // 判斷是否顯示地標色
-        if (!isLandmarksHidden && (type === 'facility' || type === 'buff')) {
-            hex.style.fill = (type === 'facility') ? "#ffd70090" : "#00ffff90";
-        } else {
-            // 顯示公會色
-            if (gId === 0) {
-                // 關鍵修正：公海 ID 為 0 時，移除行內樣式
-                hex.style.fill = "";
-            } else {
-                hex.style.fill = GUILD_CONFIG[gId].color;
-            }
-        }
-    });
-    if (typeof updateIndicators === "function") updateIndicators();
 }
 
 function openEditModal(id) {
@@ -220,33 +219,6 @@ function setPhase(p) {
 
 // 初始化
 document.addEventListener("DOMContentLoaded", renderGuildSelectors);
-
-// --- 分頁切換邏輯 ---
-function switchTab(tabName) {
-    // 1. 切換按鈕狀態
-    document.querySelectorAll('.tab-btn').forEach(btn => {
-        btn.classList.remove('active');
-        if (btn.innerText.includes(tabName === 'selector' ? '列表' : '統計')) {
-            btn.classList.add('active');
-        }
-    });
-
-    // 2. 切換內容顯示
-    const selector = document.getElementById("guild-selector");
-    const leaderboard = document.getElementById("leaderboard-panel");
-    const toolPanel = document.getElementById("tool-panel");
-
-    if (tabName === 'selector') {
-        selector.style.display = 'flex';
-        leaderboard.style.display = 'none';
-        if (toolPanel) toolPanel.style.display = 'block';
-    } else {
-        selector.style.display = 'none';
-        leaderboard.style.display = 'block';
-        if (toolPanel) toolPanel.style.display = 'none';
-        updateLeaderboard(); // 切換過來時刷新數據
-    }
-}
 
 // --- 排行榜統計邏輯 ---
 // 定義設施分數表

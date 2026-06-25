@@ -1,40 +1,13 @@
-body { /*背景*/
+body { /*網頁背景*/
     background: #222;
-    align-items: flex-start;
-    height: 100vh;
+    margin: 0;          /* 消除預設外邊距 */
+    padding: 0;         /* 消除預設內邊距 */
+    width: 100vw;       /* 強制寬度與螢幕同寬 */
+    height: 100vh;      /* 強制高度與螢幕同高 */
+    overflow: hidden;   /* 溢位不出現捲動條 */
 }
-#tool-panel {
-    margin-top: 15px;
-    padding-top: 10px;
-    border-top: 1px solid #555;
-}
-#quick-fill-toggle, 
-#landmark-toggle {
-    padding: 8px 12px;
-    margin: 5px;
-    background-color: #444;
-    color: white;
-    border: 1px solid #666;
-    border-radius: 4px;
-    cursor: pointer;
-    transition: background-color 0.2s;
-}
-#quick-fill-toggle:hover, 
-#landmark-toggle:hover {
-    background-color: #555;
-}
-/* 讓兩個按鈕在啟動（Active）狀態時有相同的視覺回饋 */
-#quick-fill-toggle.active, 
-#landmark-toggle.active {
-    background-color: #28a745; /* 或是你偏好的啟動顏色 */
-    border-color: #ffffff;
-}
-#quick-fill-toggle.active:hover, 
-#landmark-toggle.active:hover {
-    background-color: #218838; /* 稍微深一點或亮一點的綠色 */
-}
-/* 切換按鈕樣式 */
-#menu-toggle {
+
+#menu-toggle { /* 側邊欄開關按鈕樣式 */
   position: absolute;
   top: 15px;
   right: 15px;
@@ -47,28 +20,126 @@ body { /*背景*/
   cursor: pointer;
   font-size: 20px;
 }
-/* 側邊欄容器 */
-#ui-sidebar {
-  position: absolute;
+
+#ui-sidebar { /* 側邊欄外容器樣式 */
+  position: fixed;
   top: 0;
   right: 0;
   width: 280px;
   height: 100vh;
   background: rgba(30, 30, 30, 0.9);
-  z-index: 150;
-  transition: transform 0.3s ease; /* 平滑移動效果 */
+  z-index: 150; /* 圖層 */
+  transition: transform 0.3s ease; /* 平滑移動 */
   box-shadow: 2px 0 10px rgba(0,0,0,0.5);
 }
-/* 關閉狀態：向左移出螢幕 */
-#ui-sidebar.sidebar-closed {
-  transform: translateX(100%);
+#ui-sidebar.sidebar-closed { /* 側邊欄容器樣式-關閉 */
+  transform: translateX(100%); /* 向右移出以隱藏 */
 }
-#ui-panel {
-  padding: 70px 15px 20px 15px; /* 頂部留空間給按鈕 */
+
+#ui-panel { /* 側邊欄內容器樣式 */
+  padding: 70px 15px 20px 15px; /* 上下左右內邊距 */
   height: calc(100% - 90px);
-  display: flex;
+  display: flex; /* flex排版 */
   flex-direction: column;
 }
+
+#sidebar-tabs { /* 分頁按鈕容器樣式 */
+    display: flex;
+    border-bottom: 1px solid #555;
+    margin-bottom: 10px;
+}
+.tab-btn { /* 分頁按鈕樣式 */
+    flex: 1;
+    background: transparent;
+    border: none;
+    color: #aaa;
+    padding: 10px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.2s;
+    border-bottom: 3px solid transparent;
+}
+.tab-btn:hover { /* 懸停時 */
+    color: #fff;
+    background: rgba(255,255,255,0.05);
+}
+.tab-btn.active { /* 選擇時 */
+    color: #fff;
+    border-bottom: 3px solid #007bff;
+    font-weight: bold;
+}
+
+#tool-panel { /* 公會列表功能部分樣式 */
+    margin-top: 15px;
+    padding-top: 10px;
+    border-top: 1px solid #555;
+}
+
+#quick-fill-toggle,
+#landmark-toggle { /*快速佔領及地標顯示按鈕 預設(關閉)樣式*/
+    padding: 8px 12px;
+    margin: 5px;
+    background-color: #444;
+    color: white;
+    border: 1px solid #666;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+#quick-fill-toggle:hover,
+#landmark-toggle:hover { /*快速佔領及地標顯示按鈕 關閉時懸停樣式*/
+    background-color: #555;
+}
+#quick-fill-toggle.active, 
+#landmark-toggle.active { /*快速佔領及地標顯示按鈕 啟動樣式*/
+    background-color: #28a745;
+    border-color: #ffffff;
+}
+#quick-fill-toggle.active:hover, 
+#landmark-toggle.active:hover { /*快速佔領及地標顯示按鈕 啟動時懸停樣式*/
+    background-color: #218838;
+}
+
+#hexMap { /* 大地圖(背景板)樣式 */
+    background: #2f3b3f;
+    width: 100vw;
+    height: 100vh;
+    display: block;
+    overflow: hidden; /* 溢位不出現捲動條 */
+    touch-action: none; /* 禁止瀏覽器處理觸控行為 */
+}
+#hexMap:not(.hide-landmarks) .hex[data-type="facility"] { /* 設施醒目標示 */
+    fill: #ffd70090 !important; /* 強制覆蓋JS行內樣式 */
+    fill-opacity: 0.5; /* 透明度 */
+}
+#hexMap:not(.hide-landmarks) .hex[data-type="buff"] { /* 人魚島醒目標示 */
+    fill: #00ffff90 !important;
+    fill-opacity: 0.5;
+}
+.hex { /*每個格子(公海)預設樣式*/
+    fill: #c2d7f54d;
+    stroke: #1e2a2d80;
+    stroke-width: 1;
+    cursor: pointer;
+}
+.hex[data-guild-id]:not([data-guild-id="0"]) { /* 所有不是公海(被佔領)的格子 */
+    fill-opacity: 0.5; /* 降透明度 */
+}
+.hex:hover { /*懸停改色*/
+    fill: #89a3d8bb;
+}
+
+/* 整理至此 */
+/* 內容區域控制 */
+.tab-content {
+    display: none; /* 預設隱藏 */
+    flex-grow: 1;
+    overflow-y: auto;
+}
+.tab-content.active {
+    display: flex; /* 公會列表原本是 flex */
+}
+
 #guild-selector {
   flex-grow: 1;
   overflow-y: auto;
@@ -181,45 +252,7 @@ body { /*背景*/
   align-items: center;
   margin-bottom: 5px;
 }
-#hexMap { 
-    background: #2f3b3f;
-    width: 100vw;
-    height: 100vh;
-    display: block;
-    overflow: hidden;
-    touch-action: none; /* 防止移動端干擾 */
-}
-.hex {
-    fill: #c2d7f54d; /* 降低預設格子的不透明度 */
-    stroke: #1e2a2d80;
-    stroke-width: 1;
-    cursor: pointer;
-}
-.hex[data-guild-id]:not([data-guild-id="0"]) {
-    fill-opacity: 0.5; 
-}
-.hex:hover {
-    fill: #89a3d8bb;
-}
-/* 特殊格標示 */
-.hex-effect {
-    fill: none;
-    pointer-events: none;
-}
-.hex-base {
-    /* stroke: #00ff00; */
-    stroke-width: 2;
-}
-/* 設施與人魚島的填滿色 */
-#hexMap:not(.hide-landmarks) .hex[data-type="facility"] {
-    fill: #ffd70090; /* 設施預設金黃色 */
-    fill-opacity: 0.8;
-}
 
-#hexMap:not(.hide-landmarks) .hex[data-type="buff"] {
-    fill: #00ffff90; /* 人魚島青色 */
-    fill-opacity: 0.8;
-}
 /* 確保公會邊框持續顯示 (這是我們之前做的面狀邊緣) */
 .guild-outline {
     pointer-events: none;
@@ -316,42 +349,7 @@ body { /*背景*/
 .is-interacting .hex-buff {
     filter: none !important; /* 關鍵：移除模糊運算 */
 }
-/* 分頁按鈕容器 */
-#sidebar-tabs {
-    display: flex;
-    border-bottom: 1px solid #555;
-    margin-bottom: 10px;
-}
-/* 分頁按鈕 */
-.tab-btn {
-    flex: 1;
-    background: transparent;
-    border: none;
-    color: #aaa;
-    padding: 10px;
-    cursor: pointer;
-    font-size: 14px;
-    transition: all 0.2s;
-    border-bottom: 3px solid transparent;
-}
-.tab-btn:hover {
-    color: #fff;
-    background: rgba(255,255,255,0.05);
-}
-.tab-btn.active {
-    color: #fff;
-    border-bottom: 3px solid #007bff;
-    font-weight: bold;
-}
-/* 內容區域控制 */
-.tab-content {
-    display: none; /* 預設隱藏 */
-    flex-grow: 1;
-    overflow-y: auto;
-}
-.tab-content.active {
-    display: flex; /* 公會列表原本是 flex */
-}
+
 /* 排行榜專用顯示模式 */
 #leaderboard-panel.active {
     display: block; 

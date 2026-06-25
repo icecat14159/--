@@ -1,5 +1,6 @@
+// 海域顏色
 const GUILD_CONFIG = {
-    0: { id: 0, name: "公海", color: "#c2d7f54d", textColor: "#000" }, // 預設空白格
+    0: { id: 0, name: "公海", color: "#c2d7f54d", textColor: "#000" },
     1: { id: 1, name: "公會1", color: "#ffffff", textColor: "#fff" },
     2: { id: 2, name: "公會2", color: "#33ccff", textColor: "#000" },
     3: { id: 3, name: "公會3", color: "#9966ff", textColor: "#fff" },
@@ -18,7 +19,7 @@ const GUILD_CONFIG = {
     16: { id: 16, name: "公會16", color: "#b380ff", textColor: "#000" }
 };
 
-// 格子類型枚舉
+//海域類型
 const TILE_TYPES = {
     EMPTY: 'empty',
     BASE: 'base',      // 據點

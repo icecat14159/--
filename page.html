@@ -1,28 +1,31 @@
 <!DOCTYPE html>
-<html lang="zh-Hant">
+<html lang="zh-TW">
   <head>
     <meta charset="UTF-8">
     <title>海盜棋模擬網站</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css"> <!-- 導入CSS -->
   </head>
   <body>
-    <button id="menu-toggle" onclick="toggleSidebar()">☰</button>
-    <div id="ui-sidebar" class="sidebar-open">
-      <div id="ui-panel">
-        <div id="sidebar-tabs">
-          <button class="tab-btn active" onclick="switchTab('selector')">公會列表</button>
+    <button id="menu-toggle" onclick="toggleSidebar()">✕</button> <!-- 側邊攔開關按鈕 -->
+    <div id="ui-sidebar" class="sidebar-open"> <!-- 側邊攔外層 -->
+      <div id="ui-panel"> <!-- 側邊攔內層 -->
+        <!-- 分頁按鈕 -->
+        <div id="sidebar-tabs"> 
+          <button class="tab-btn active" onclick="switchTab('selector')">公會列表</button> <!-- 預設選擇(active) -->
           <button class="tab-btn" onclick="switchTab('leaderboard')">設施統計</button>
         </div>
 
-        <div id="tool-panel">
-          <button id="quick-fill-toggle" onclick="toggleQuickFill()">快速佔領：OFF</button>
-          <button id="landmark-toggle" onclick="toggleLandmarks()">隱藏地標：OFF</button>
-          <div style="margin-top: 10px; border-top: 1px solid #666; padding-top: 5px;">
+        <!-- 公會列表功能部分 -->
+        <div id="tool-panel"> 
+          <button id="quick-fill-toggle" onclick="toggleQuickFill()">快速佔領：OFF</button> <!-- 快速佔領功能 -->
+          <button id="landmark-toggle" onclick="toggleLandmarks()">隱藏地標：OFF</button> <!-- 地標功能 整理至此 -->
+          <div style="margin-top: 10px; border-top: 1px solid #666; padding-top: 5px;"> <!-- 開放階段功能 -->
               <span style="color: white; font-size: 14px;">地圖階段：</span><br>
               <button class="phase-btn" onclick="setPhase(1)">一期</button>
               <button class="phase-btn" onclick="setPhase(2)">二期</button>
               <button class="phase-btn" onclick="setPhase(3)">三期</button>
           </div><br>
+          <!-- 戰術標記功能 -->
           <div id="marker-panel" style="margin-top: 10px; border-top: 1px solid #666; padding-top: 5px;">
             <span style="color: white; font-size: 14px;">戰術標記：</span><br>
             
@@ -50,13 +53,14 @@
           </div><br>
         </div>
 
+        <!-- 公會列表公會部分 -->
         <div id="guild-selector" class="tab-content active"></div>
-        
+        <!-- 設施統計部分 預設隱藏 -->
         <div id="leaderboard-panel" class="tab-content" style="display: none;"></div>
       </div>
     </div>
 
-    <div id="edit-modal" style="display: none;">
+    <div id="edit-modal" style="display: none;"> <!-- 編輯公會畫面 -->
       <div class="modal-content">
         <h4>編輯公會資訊</h4>
         <label>名稱：<input type="text" id="edit-name"></label><br><br>
@@ -68,7 +72,7 @@
       </div>
     </div>
 
-    <svg id="hexMap">
+    <svg id="hexMap"> <!-- 主地圖 -->
       <defs>
         <pattern id="hatchPattern" patternUnits="userSpaceOnUse" width="10" height="10">
           <path d="M 0,10 l 10,-10 M -2,2 l 4,-4 M 8,12 l 4,-4" 
