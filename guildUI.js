@@ -67,6 +67,62 @@ function toggleLandmarks(){
     map.classList.toggle("hide-landmarks", isLandmarksHidden); //加上或移除 hide-landmarks 類別 
 }
 
+//地圖階段切換
+function setPhase(p) {
+    updateMapPhase(p);
+    document.querySelectorAll('.phase-btn').forEach(btn => { //檢查每個按鈕
+        btn.classList.remove('active');
+        if (btn.innerText.includes(p === 1 ? "一" : p === 2 ? "二" : "三")) { //為選中的按鈕加上 active 類別
+            btn.classList.add('active');
+        }
+    });
+}
+
+//戰術標記狀態
+let currentMarkerTool = null; // null, 'attack', 'defend', 'ban', 'warn', 'clear'
+let currentMarkerValue = ""; //戰術標記數值
+
+//戰術標記模式
+function selectMarkerTool(type) {
+    if (currentMarkerTool === type) { //點擊相同標記按鈕時退出
+        currentMarkerTool = null;
+    } else {
+        currentMarkerTool = type;
+    }
+
+    document.querySelectorAll('.marker-btn').forEach(btn => { //找被選中的按鈕
+        btn.classList.remove('active');
+        if (currentMarkerTool === type && btn.classList.contains(type)) {
+            btn.classList.add('active'); //加入樣式
+        }
+    });
+
+    //更改文字提示
+    const statusText = document.getElementById("marker-status");
+    if (!currentMarkerTool) { //如果退出狀態
+        statusText.innerText = "目前模式：無 (點擊佔領)";
+        statusText.style.color = "#aaa";
+    } else { //依模式改變顯示
+        const names = { attack: "進攻", defend: "防守", ban: "禁止", warn: "注意", clear: "清除" };
+        statusText.innerText = `目前模式：${names[type]}`;
+        statusText.style.color = "#fff";
+    }
+}
+
+//填入數值
+function updateMarkerValue(val) {
+    currentMarkerValue = val.trim();
+}
+
+//提供 hex.js 讀取戰術標記變數
+function getMarkerToolStatus() {
+    return {
+        type: currentMarkerTool,
+        value: currentMarkerValue
+    };
+}
+
+//整理至此
 // 狀態管理
 let currentGuildId = 0;
 let editingGuildId = null;
@@ -147,29 +203,6 @@ function saveGuildEdit() {
     closeModal();
 }
 
-const PRESET_COLORS = [
-    "#ffffff", // 白色
-    "#33ccff", // 天藍
-    "#9966ff", // 紫羅蘭
-    "#ff66b2", // 粉紅
-    "#008080", // 深青
-    "#b2b2b2", // 淺灰
-    "#6600cc", // 深紫
-    "#ccff33", // 萊姆綠 (偏黃)
-    "#00cc99", // 薄荷綠
-    "#99004c", // 桃紅
-    "#66b2ff", // 亮藍
-    "#c0c0c0", // 銀色
-    "#ff99cc", // 淺粉
-    "#4d94ff", // 鈷藍
-    "#99ffeb", // 淺青
-    "#9933ff", // 紫色
-    "#66ff66", // 淺綠 (與據點綠區分)
-    "#b380ff", // 薰衣草
-    "#5cd6d6", // 青綠
-    "#ffccff"  // 淡紫
-];
-
 function openEditModal(id) {
     editingGuildId = id;
     const guild = GUILD_CONFIG[id];
@@ -201,20 +234,6 @@ function openEditModal(id) {
     });
 
     document.getElementById("edit-modal").style.display = "flex";
-}
-
-function setPhase(p) {
-    if (typeof updateMapPhase === "function") {
-        updateMapPhase(p);
-    }
-    
-    // 按鈕視覺回饋 (Optional)
-    document.querySelectorAll('.phase-btn').forEach(btn => {
-        btn.classList.remove('active');
-        if (btn.innerText.includes(p === 1 ? "一" : p === 2 ? "二" : "三")) {
-            btn.classList.add('active');
-        }
-    });
 }
 
 // 初始化
@@ -396,46 +415,3 @@ function updateLeaderboard() {
     }
 }
 
-// --- 戰術標記狀態 ---
-let currentMarkerTool = null; // null, 'attack', 'defend', 'ban', 'warn', 'clear'
-let currentMarkerValue = "";
-
-function selectMarkerTool(type) {
-    // 如果點擊已選中的工具，則取消選取（回到一般佔領模式）
-    if (currentMarkerTool === type) {
-        currentMarkerTool = null;
-    } else {
-        currentMarkerTool = type;
-    }
-
-    // 更新 UI 按鈕狀態
-    document.querySelectorAll('.marker-btn').forEach(btn => {
-        btn.classList.remove('active');
-        if (currentMarkerTool === type && btn.classList.contains(type)) {
-            btn.classList.add('active');
-        }
-    });
-
-    // 更新文字提示
-    const statusText = document.getElementById("marker-status");
-    if (!currentMarkerTool) {
-        statusText.innerText = "目前模式：無 (點擊佔領)";
-        statusText.style.color = "#aaa";
-    } else {
-        const names = { attack: "進攻", defend: "防守", ban: "禁止", warn: "注意", clear: "清除" };
-        statusText.innerText = `目前模式：${names[type]}`;
-        statusText.style.color = "#fff";
-    }
-}
-
-function updateMarkerValue(val) {
-    currentMarkerValue = val.trim();
-}
-
-// 提供給 hex.js 讀取
-function getMarkerToolStatus() {
-    return {
-        type: currentMarkerTool,
-        value: currentMarkerValue
-    };
-}

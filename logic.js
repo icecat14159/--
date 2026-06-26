@@ -206,75 +206,69 @@ function updateIndicators() {
     });
 }
 
+
 //切換地圖階段
-let currentPhase = 1; // 預設為全開放 (或設為 1)
+let currentPhase = 1; // 預設為第一天
 function updateMapPhase(phase) {
     currentPhase = phase;
     
-    // 1. 清除舊的禁區遮罩與標記
-    document.getElementById("restriction-layer").innerHTML = "";
-    document.querySelectorAll('.hex').forEach(hex => {
+    //清除舊禁區遮罩與標記
+    document.getElementById("restriction-layer").innerHTML = ""; //清空禁區圖層的所有內容
+    document.querySelectorAll('.hex').forEach(hex => { //清除每格的禁區屬性
         hex.dataset.restricted = "false";
-        // 移除禁止游標樣式（如果之前是用 class 控制）
     });
 
-    let radius = 0;
-    if (phase === 1) radius = 7;
-    else if (phase === 2) radius = 4;
+    let radius = 0; //第三天全開放
+    if (phase === 1) radius = 7; //第一天半徑7封閉
+    else if (phase === 2) radius = 4; //第二天半徑4封閉
 
-    // 2. 使用 BFS 從中心點 (14, 14) 擴散找出禁區
+    //BFS 從中心點 (14, 14) 擴散找禁區
     if (radius > 0) {
         const centerQ = 14;
         const centerR = 14;
-        const centerId = `${centerQ},${centerR}`;
+        const centerId = `${centerQ},${centerR}`; //先設中心點
 
-        const restrictedSet = new Set();
-        const queue = [{ q: centerQ, r: centerR, dist: 0 }];
-        restrictedSet.add(centerId);
+        const restrictedSet = new Set(); //Set資料結構紀錄已訪問格子
+        const queue = [{ q: centerQ, r: centerR, dist: 0 }]; //佇列資料結構(此時先放入中心點)
+        restrictedSet.add(centerId); //先記錄中心點
 
         while (queue.length > 0) {
-            const { q, r, dist } = queue.shift();
+            const { q, r, dist } = queue.shift(); //從佇列中取出
+            markAsRestricted(q, r); //標記為禁區
 
-            // 標記此格為禁區
-            markAsRestricted(q, r);
-
-            if (dist < radius) {
-                getNeighbors(q, r).forEach(n => {
+            if (dist < radius) { //未達禁區半徑就繼續往外找
+                getNeighbors(q, r).forEach(n => { //取得鄰近六格座標
                     const nId = `${n.q},${n.r}`;
-                    if (!restrictedSet.has(nId)) {
-                        // 邊界檢查
-                        if (n.q >= 0 && n.q < COLS && n.r >= 0 && n.r < ROWS) {
-                            restrictedSet.add(nId);
-                            queue.push({ q: n.q, r: n.r, dist: dist + 1 });
-                        }
+                    if (!restrictedSet.has(nId)) { //如果未訪問過
+                        restrictedSet.add(nId); //紀錄訪問
+                        queue.push({ q: n.q, r: n.r, dist: dist + 1 }); //推入佇列
                     }
                 });
             }
         }
     }
-    updateConnectivity();
-    if (typeof updateGuildOutlines === "function") updateGuildOutlines();
-    updateIndicators();
+    refreshAllLogic();
 }
 
-//輔助：視覺化禁區
+//禁區設定
 function markAsRestricted(q, r) {
-    const hex = document.querySelector(`.hex[data-q="${q}"][data-r="${r}"]`);
+    //防錯段落
+    const hex = document.querySelector(`.hex[data-q="${q}"][data-r="${r}"]`); //尋找該物件
     if (!hex) return;
 
-    // 邏輯標記
+    //標記為禁區
     hex.dataset.restricted = "true";
 
-    // 視覺遮罩 (建立一個疊在上面的多邊形)
+    //建立遮罩圖案
     const { x, y } = hexToPixel(q, r);
-    const overlay = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
-    overlay.setAttribute("points", hexPoints(x, y, HEX_SIZE)); // 沿用 hex.js 的 hexPoints
-    overlay.setAttribute("class", "hex-restricted-overlay");
+    const overlay = document.createElementNS("http://www.w3.org/2000/svg", "polygon"); //創建svg
+    overlay.setAttribute("points", hexPoints(x, y, HEX_SIZE)); //畫出該位置上的六邊形
+    overlay.setAttribute("class", "hex-restricted-overlay"); //加入樣式
     
-    document.getElementById("restriction-layer").appendChild(overlay);
+    document.getElementById("restriction-layer").appendChild(overlay); //加到禁區圖層中
 
-    if (hex.dataset.type !== FEATURE_TYPES.BASE && hex.dataset.guildId !== "0") {
-        hex.dataset.guildId = "0";
-        hex.style.fill = "";
+    if (hex.dataset.guildId !== "0") { //如果是公會海域
+        hex.dataset.guildId = "0"; //設為公海
+        hex.style.fill = ""; //清除樣式
     }
 }

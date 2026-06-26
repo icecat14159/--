@@ -15,7 +15,7 @@ const MAP_HEIGHT = ROWS * HEX_HEIGHT + HEX_HEIGHT / 2;
 svg.setAttribute("width", MAP_WIDTH);
 svg.setAttribute("height", MAP_HEIGHT);
 
-// 六邊形六個角
+//六邊形六個角點座標
 function hexPoints(cx, cy, size) {
   const points = [];
   for (let i = 0; i < 6; i++) { //6頂點
@@ -27,6 +27,7 @@ function hexPoints(cx, cy, size) {
   return points.join(" ");
 }
 
+//轉換 q, r 座標
 function hexToPixel(q, r) {
     const x = q * (HEX_SIZE * 1.5) + HEX_SIZE;
     let y = r * HEX_HEIGHT + HEX_HEIGHT / 2;
@@ -72,12 +73,12 @@ function occupyTile(element, isClickAction = false) {
     }
 }
 
-// 建立一個統一執行重消耗運算的函式
+//重計算函式
 function refreshAllLogic() {
-    updateConnectivity();
-    if (typeof updateGuildOutlines === "function") updateGuildOutlines();
-    updateIndicators();
-    if (typeof updateLeaderboard === "function") updateLeaderboard();
+    updateConnectivity(); //重算連通性
+    updateGuildOutlines(); //重算公會邊界
+    updateIndicators(); //重算戰術箭頭
+    updateLeaderboard(); //重算排行榜
 }
 
 const gridLayer = document.getElementById("grid-layer");
@@ -124,30 +125,26 @@ for (let q = 0; q < COLS; q++) {
       }
     }
     
-    // 新增：滑鼠移入事件
+    //滑鼠移入事件
     hex.addEventListener("mouseenter", function() {
-        // 只有在「快速佔領開啟」且「滑鼠左鍵按下」時才觸發
-        if (getQuickFillStatus() && isMouseDown) {
+        if (getQuickFillStatus() && isMouseDown) { //只在快速佔領開啟且滑鼠左鍵按下時才觸發
             occupyTile(this);
         }
     });
 
-    // 修改原有的點擊事件
+    //滑鼠點擊事件
     hex.addEventListener("click", function(e) {
-        if (getQuickFillStatus()) return; // 快速模式下交由 mouseenter 處理
+        if (getQuickFillStatus()) return; //快速佔領模式時改由 mouseenter 處理
         
-        // 判斷是否為拖曳而非點擊
         const distMoved = Math.hypot(translateX - dragStartTranslateX, translateY - dragStartTranslateY);
-
-        if (distMoved > 5) {
-            return; // 如果地圖動了，這就是拖曳，直接結束，不執行佔領
-        }
-        const markerStatus = getMarkerToolStatus(); 
+        if (distMoved > 3) return; //撇除拖曳行為
+        
+        const markerStatus = getMarkerToolStatus(); //判斷目前模式
         if (markerStatus.type) {
-            placeMarker(this, markerStatus.type, markerStatus.value);
+            placeMarker(this, markerStatus.type, markerStatus.value); //進行標記
         } else {
-            occupyTile(this);
-            refreshAllLogic();
+            occupyTile(this); //進行佔領
+            refreshAllLogic(); //重計算
         }
     });
 
@@ -194,49 +191,43 @@ function addSpecialEffect(cx, cy, className, iconText) {
     effectLayer.appendChild(text);
 }
 
-// --- 標記渲染函式 ---
+//地圖上建立戰術標記
 function placeMarker(hexElement, type, value) {
     const q = parseInt(hexElement.dataset.q);
     const r = parseInt(hexElement.dataset.r);
     
-    // 1. 清除該格既有的標記
+    //清除該格既有標記
     const existingMarker = document.getElementById(`marker-${q}-${r}`);
     if (existingMarker) {
         existingMarker.remove();
     }
 
-    // 如果是清除模式，做完刪除就結束
+    //清除模式下刪完就結束
     if (type === 'clear') return;
 
-    // 2. 準備繪製參數
+    //繪製參數
     const { x, y } = hexToPixel(q, r);
-    // const pinX = x;
-    // const pinY = y - 20;
     const offsetX = 0;
     const offsetY = -HEX_SIZE * 0.45;
     const pinX = x + offsetX;
     const pinY = y + offsetY;
 
-    // 定義顏色與圖示
+    //定義顏色與圖示
     const config = {
         attack: { 
             color: "#fd7e14",
-            // 雙劍交叉
             path: "M 4 21 L 2 19 L 4 17 L 1 14 L 3 12 L 6 15 L 18 3 L 20 3 L 20 5 L 8 17 L 11 20 L 9 22 L 6 19 Z M 6 3 L 4 3 L 4 5 L 10 11 L 12 9 Z M 12 13 L 16 17 L 13 20 L 15 22 L 18 19 L 20 21 L 22 19 L 20 17 L 23 14 L 21 12 L 18 15 L 14 11 Z"
         },
         defend: { 
             color: "#007bff", 
-            // 盾牌
             path: "M12,1L3,5v6c0,5.55,3.84,10.74,9,12c5.16-1.26,9-6.45,9-12V5L12,1z M12,11.99h7c-0.53,4.12-3.28,7.79-7,8.94V12H5V6.3 l7-3.11V11.99z"
         },
         ban: { 
             color: "#dc3545", 
-            // 禁止標誌
             path: "M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8 0-1.84.62-3.54 1.66-4.92L16.92 18.34C15.54 19.38 13.84 20 12 20zm8-8c0 1.84-.62 3.54-1.66 4.92L7.08 5.66C8.46 4.62 10.16 4 12 4c4.41 0 8 3.59 8 8z"
         },
         warn: { 
             color: "#ffc107", 
-            // 注意三角
             path: "M1,21h22L12,2L1,21z M13,18h-2v-2h2V18z M13,14h-2v-4h2V14z"
         }
     };

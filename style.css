@@ -108,6 +108,7 @@ body { /*網頁背景*/
     overflow: hidden; /* 溢位不出現捲動條 */
     touch-action: none; /* 禁止瀏覽器處理觸控行為 */
 }
+
 #hexMap:not(.hide-landmarks) .hex[data-type="facility"] { /* 設施醒目標示 */
     fill: #ffd70090 !important; /* 強制覆蓋JS行內樣式 */
     fill-opacity: 0.5; /* 透明度 */
@@ -116,6 +117,7 @@ body { /*網頁背景*/
     fill: #00ffff90 !important;
     fill-opacity: 0.5;
 }
+
 .hex { /*每個格子(公海)預設樣式*/
     fill: #c2d7f54d;
     stroke: #1e2a2d80;
@@ -127,6 +129,89 @@ body { /*網頁背景*/
 }
 .hex:hover { /*懸停改色*/
     fill: #89a3d8bb;
+}
+
+.hex-restricted-overlay { /* 禁區遮罩樣式 */
+    fill: url(#hatchPattern); /* 填滿斜線 */
+    pointer-events: none;     /* 允許滑鼠點擊穿透 */
+    stroke: #555;
+    stroke-width: 2;
+}
+.hex[data-restricted="true"] { /* 禁區給予禁止回饋 */
+    cursor: not-allowed;
+}
+
+.phase-btn { /* 地圖階段切換按鈕樣式 */
+    background: #444;
+    color: white;
+    border: 1px solid #666;
+    border-radius: 3px;
+    padding: 4px 8px;
+    margin: 2px;
+    cursor: pointer;
+}
+.phase-btn.active { /* 地圖階段按鈕選中樣式 */
+    background: #007bff;
+    border-color: white;
+}
+
+.marker-btn { /* 戰術標記按鈕通用樣式 */
+    width: 30px;
+    height: 30px;
+    border: 2px solid #555;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.1s;
+}
+.marker-btn:hover { /* 戰術標記按鈕懸停特效 */
+    transform: scale(1.1);
+}
+.marker-btn.active { /* 戰術標記按鈕選中效果 */
+    border-color: white;
+    box-shadow: 0 0 5px white;
+}
+.marker-btn.attack { background-color: #fd7e14; } /* 進攻 */
+.marker-btn.defend { background-color: #007bff; } /* 防守 */
+.marker-btn.ban    { background-color: #dc3545; } /* 禁止 */
+.marker-btn.warn   { background-color: #ffc107; } /* 注意 */
+.marker-btn.clear { background-color: #666; }    /* 清除 */
+
+/* 地圖上的標記樣式 */
+.map-marker-group {
+    pointer-events: none; /* 讓點擊穿透，不影響格子操作 */
+}
+.map-marker-bg {
+    stroke: white;
+    stroke-width: 1px;
+    filter: drop-shadow(0 0 2px rgba(0,0,0,0.5));
+}
+/* 整個圖釘群組 */
+.map-marker-group {
+    pointer-events: none;
+    /* 為整個圖釘加上投影，製造「浮起」或「釘入」的立體感 */
+    filter: drop-shadow(1px 2px 2px rgba(0,0,0,0.5));
+    transition: filter 0.2s;
+}
+/* 圖釘圓頭 */
+.map-marker-head {
+    stroke: white;
+    stroke-width: 1.5px; /* 加粗白邊，增加質感 */
+}
+/* 圖釘內的文字/圖示 */
+.map-marker-text {
+    font-size: 11px; /* 預設字體縮小 */
+    font-weight: bold;
+    fill: white;
+    text-anchor: middle;
+    dominant-baseline: central;
+}
+/* 互動優化：拖曳縮放時暫時移除陰影 */
+.is-interacting .map-marker-group {
+    filter: none !important;
 }
 
 /* 整理至此 */
@@ -258,8 +343,8 @@ body { /*網頁背景*/
     pointer-events: none;
     z-index: 10;
 }
+
 .hex-obstacle {
-    /* stroke: #ff0000; */
     stroke-width: 1;
 }
 /* 確保圖案永遠在最上面 */
@@ -294,29 +379,7 @@ body { /*網頁背景*/
 .hex[data-type="obstacle"]:hover {
     fill: transparent !important;
 }
-/* 禁區遮罩樣式 */
-.hex-restricted-overlay {
-    fill: url(#hatchPattern); /* 引用 HTML 定義的斜線 */
-    pointer-events: none;     /* 讓滑鼠點擊能穿透遮罩 (但我們會用 JS 擋住操作) */
-    stroke: #555;             /* 禁區邊框顏色 */
-    stroke-width: 2;
-}
-.hex[data-restricted="true"] {
-    cursor: not-allowed;
-}
-.phase-btn {
-    background: #444;
-    color: white;
-    border: 1px solid #666;
-    border-radius: 3px;
-    padding: 4px 8px;
-    margin: 2px;
-    cursor: pointer;
-}
-.phase-btn.active {
-    background: #007bff;
-    border-color: white;
-}
+
 /* 提示箭頭基礎樣式 */
 .indicator-group {
     pointer-events: none;
@@ -415,70 +478,4 @@ body { /*網頁背景*/
     color: #ffcc00; /* 結算分用金色系 */
     font-weight: bold;
     font-size: 13px;
-}
-/* 標記按鈕容器 */
-.marker-controls {
-    display: flex;
-    gap: 5px;
-    margin-top: 5px;
-}
-/* 標記按鈕通用樣式 */
-.marker-btn {
-    width: 30px;
-    height: 30px;
-    border: 2px solid #555;
-    border-radius: 5px;
-    cursor: pointer;
-    font-size: 16px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: transform 0.1s;
-}
-.marker-btn:hover {
-    transform: scale(1.1);
-}
-/* 選中狀態：發光邊框 */
-.marker-btn.active {
-    border-color: white;
-    box-shadow: 0 0 5px white;
-}
-/* 各類型按鈕顏色 */
-.marker-btn.attack { background-color: #fd7e14; } /* 橙色 */
-.marker-btn.defend { background-color: #007bff; } /* 藍色 */
-.marker-btn.ban    { background-color: #dc3545; } /* 紅色 */
-.marker-btn.warn   { background-color: #ffc107; } /* 黃色 */
-.marker-btn.clear { background-color: #666; }    /* 灰色 */
-/* 地圖上的標記樣式 */
-.map-marker-group {
-    pointer-events: none; /* 讓點擊穿透，不影響格子操作 */
-}
-.map-marker-bg {
-    stroke: white;
-    stroke-width: 1px;
-    filter: drop-shadow(0 0 2px rgba(0,0,0,0.5));
-}
-/* 整個圖釘群組 */
-.map-marker-group {
-    pointer-events: none;
-    /* 為整個圖釘加上投影，製造「浮起」或「釘入」的立體感 */
-    filter: drop-shadow(1px 2px 2px rgba(0,0,0,0.5));
-    transition: filter 0.2s;
-}
-/* 圖釘圓頭 */
-.map-marker-head {
-    stroke: white;
-    stroke-width: 1.5px; /* 加粗白邊，增加質感 */
-}
-/* 圖釘內的文字/圖示 */
-.map-marker-text {
-    font-size: 11px; /* 預設字體縮小 */
-    font-weight: bold;
-    fill: white;
-    text-anchor: middle;
-    dominant-baseline: central;
-}
-/* 互動優化：拖曳縮放時暫時移除陰影 */
-.is-interacting .map-marker-group {
-    filter: none !important;
 }
