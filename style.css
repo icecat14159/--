@@ -125,7 +125,7 @@ body { /*網頁背景*/
     cursor: pointer;
 }
 .hex[data-guild-id]:not([data-guild-id="0"]) { /* 所有不是公海(被佔領)的格子 */
-    fill-opacity: 0.5; /* 降透明度 */
+    fill-opacity: 0.3; /* 降透明度 */
 }
 .hex:hover { /*懸停改色*/
     fill: #89a3d8bb;
@@ -180,38 +180,32 @@ body { /*網頁背景*/
 .marker-btn.warn   { background-color: #ffc107; } /* 注意 */
 .marker-btn.clear { background-color: #666; }    /* 清除 */
 
-/* 地圖上的標記樣式 */
-.map-marker-group {
-    pointer-events: none; /* 讓點擊穿透，不影響格子操作 */
-}
-.map-marker-bg {
-    stroke: white;
-    stroke-width: 1px;
-    filter: drop-shadow(0 0 2px rgba(0,0,0,0.5));
-}
-/* 整個圖釘群組 */
-.map-marker-group {
+.map-marker-group { /* 地圖上的戰術標記(圖釘)樣式 */
     pointer-events: none;
-    /* 為整個圖釘加上投影，製造「浮起」或「釘入」的立體感 */
-    filter: drop-shadow(1px 2px 2px rgba(0,0,0,0.5));
+    filter: drop-shadow(1px 2px 2px rgba(0,0,0,0.5)); /* 陰影立體感 */
     transition: filter 0.2s;
 }
-/* 圖釘圓頭 */
-.map-marker-head {
-    stroke: white;
-    stroke-width: 1.5px; /* 加粗白邊，增加質感 */
+.is-interacting .map-marker-group { /* 效能改善 拖曳縮放時移除陰影 */
+    filter: none !important;
 }
-/* 圖釘內的文字/圖示 */
-.map-marker-text {
-    font-size: 11px; /* 預設字體縮小 */
+.map-marker-pin { /* 圖釘針頭 */
+    fill: #ffffff;
+    stroke: #999999;
+    stroke-width: 0.5px;
+}
+.map-marker-head { /* 圖釘圓頭 */
+    stroke: white;
+    stroke-width: 1.5px;
+}
+.map-marker-text { /* 圖釘內文字或圖示 */
+    font-size: 11px;
     font-weight: bold;
     fill: white;
     text-anchor: middle;
     dominant-baseline: central;
 }
-/* 互動優化：拖曳縮放時暫時移除陰影 */
-.is-interacting .map-marker-group {
-    filter: none !important;
+.map-marker-icon { /* 圖釘內圖示 */
+    fill: white;
 }
 
 /* 整理至此 */

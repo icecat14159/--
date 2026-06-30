@@ -196,19 +196,18 @@ function placeMarker(hexElement, type, value) {
     const q = parseInt(hexElement.dataset.q);
     const r = parseInt(hexElement.dataset.r);
     
-    //清除該格既有標記
     const existingMarker = document.getElementById(`marker-${q}-${r}`);
-    if (existingMarker) {
+    if (existingMarker) { //清除該格既有標記
         existingMarker.remove();
     }
 
     //清除模式下刪完就結束
     if (type === 'clear') return;
 
-    //繪製參數
+    //設定繪製座標
     const { x, y } = hexToPixel(q, r);
     const offsetX = 0;
-    const offsetY = -HEX_SIZE * 0.45;
+    const offsetY = -HEX_SIZE * 0.45; //稍微向上偏移
     const pinX = x + offsetX;
     const pinY = y + offsetY;
 
@@ -231,55 +230,48 @@ function placeMarker(hexElement, type, value) {
             path: "M1,21h22L12,2L1,21z M13,18h-2v-2h2V18z M13,14h-2v-4h2V14z"
         }
     };
-    const settings = config[type];
-    if (!settings) return;
+    const settings = config[type]; //取得目前選擇模式
+    if (!settings) return; //防錯機制 無模式立即退出
 
+    //建立標記主容器
     const group = document.createElementNS("http://www.w3.org/2000/svg", "g");
     group.setAttribute("id", `marker-${q}-${r}`);
     group.setAttribute("class", "map-marker-group");
     group.setAttribute("transform", `translate(${pinX}, ${pinY})`);
 
-    // --- 3. 繪製圖釘的「針尖」(灰色小三角形，製造插入感) ---
+    //繪製圖釘針頭
     const pinPoint = document.createElementNS("http://www.w3.org/2000/svg", "path");
-    // 畫一個指向右下方的小尖角
     pinPoint.setAttribute("d", "M -5,0 L 0,13 L 5,0 Z");
-    pinPoint.setAttribute("fill", "#FFFFFF"); // 針尖金屬色
-    pinPoint.setAttribute("stroke", "#999999");
-    pinPoint.setAttribute("stroke-width", "0.5");
-    // 稍微往下移一點，讓它看起來在圓頭下方
+    pinPoint.setAttribute("class", "map-marker-pin");
     pinPoint.setAttribute("transform", "translate(0, 5)");
     group.appendChild(pinPoint);
 
-    // --- 4. 繪製圖釘的「圓頭」(彩色背景) ---
+    //繪製圖釘圓頭
     const head = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-    head.setAttribute("cx", 0); // 相對於群組中心
+    head.setAttribute("cx", 0);
     head.setAttribute("cy", 0);
-    // 縮小半徑，看起來更像圖釘頭
-    head.setAttribute("r", HEX_SIZE * 0.35); 
-    head.setAttribute("fill", settings.color);
+    head.setAttribute("r", HEX_SIZE * 0.35);
+    head.setAttribute("fill", settings.color); //填入當前模式顏色
     head.setAttribute("class", "map-marker-head");
     group.appendChild(head);
 
-    // 5. 決定顯示內容 (數字優先於圖示)
-    if (value && value.length > 0) {
-        // === 有輸入數字：繪製文字 ===
+    //顯示內容
+    if (value && value.length > 0) { //有數值時
         const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
         text.setAttribute("x", 0);
         text.setAttribute("y", 1);
         text.setAttribute("class", "map-marker-text");
         text.textContent = value;
-        text.style.fontSize = (value.length >= 3) ? "9px" : "11px";
+        text.style.fontSize = (value.length >= 5) ? "7px" : (value.length >= 3) ? "9px" : "11px"; //依數值字數改變大小
         group.appendChild(text);
-    } else {
-        // === 沒有數字：繪製白色鏤空圖示 ===
+    } else { //無數值時
         const iconPath = document.createElementNS("http://www.w3.org/2000/svg", "path");
-        iconPath.setAttribute("d", settings.path);
-        iconPath.setAttribute("fill", "white");
+        iconPath.setAttribute("d", settings.path); //繪製圖案
+        iconPath.setAttribute("class", "map-marker-icon");
         iconPath.setAttribute("transform", "scale(0.55) translate(-12, -12)");
-        iconPath.setAttribute("pointer-events", "none");
         group.appendChild(iconPath);
     }
-    document.getElementById("mark-layer").appendChild(group);
+    document.getElementById("mark-layer").appendChild(group); //加入到標記圖層
 }
 
 window.updateMapColors = function(guildId, newColor) {

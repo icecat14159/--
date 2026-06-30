@@ -240,14 +240,8 @@ function openEditModal(id) {
 document.addEventListener("DOMContentLoaded", renderGuildSelectors);
 
 // --- 排行榜統計邏輯 ---
-// 定義設施分數表
-const SCORE_RULES = {
-    "水手酒館": { periodic: 100, final: 200 },
-    "海上餐廳": { periodic: 150, final: 300 },
-    "沈船點":   { periodic: 270, final: 1080 },
-    "珍寶點":   { periodic: 800, final: 9600 },
-    "人魚島":   { periodic: 0,   final: 0 }
-};
+
+
 function updateLeaderboard() {
     const panel = document.getElementById("leaderboard-panel");
     if (panel.style.display === 'none') return;

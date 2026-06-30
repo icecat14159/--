@@ -48,7 +48,7 @@
                 <button class="marker-btn clear" onclick="selectMarkerTool('clear')" title="清除標記"></button>
             </div>
 
-            <div style="margin-top: 5px; display: flex; align-items: center;"> <!-- 選填數值 整理至此 -->
+            <div style="margin-top: 5px; display: flex; align-items: center;"> <!-- 選填數值 -->
                 <span style="color: #ccc; font-size: 12px; margin-right: 5px;">數值(億):</span>
                 <input type="number" id="marker-value" placeholder="選填" oninput="updateMarkerValue(this.value)" style="width: 60px; background: #333; color: white; border: 1px solid #555; border-radius: 3px;">
             </div>
@@ -56,7 +56,7 @@
           </div><br>
         </div>
 
-        <!-- 公會列表公會部分 -->
+        <!-- 公會列表公會部分 整理至此 -->
         <div id="guild-selector" class="tab-content active"></div>
         <!-- 設施統計部分 預設隱藏 -->
         <div id="leaderboard-panel" class="tab-content" style="display: none;"></div>
@@ -88,7 +88,7 @@
         <g id="grid-layer"></g> <!-- 圖層 -->
         <g id="restriction-layer"></g> <!-- 禁區圖層 -->
         <g id="effect-layer"></g> <!-- 圖層 -->
-        <g id="mark-layer"></g> <!-- 圖層 -->
+        <g id="mark-layer"></g> <!-- 標記圖層 -->
       </g>
     </svg>
 
