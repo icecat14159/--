@@ -146,3 +146,13 @@ const SCORE_RULES = {
     "珍寶點":   { periodic: 800, final: 9600 },
     "人魚島":   { periodic: 0,   final: 0 }
 };
+
+//設施底圖、放大與偏移數值
+const IMAGE_ASSETS = {
+    "公會船": { url: "picture/公會船.png", scaleW: 1.4, scaleH: 1.4, offsetX: 7, offsetY: 0},
+    "水手酒館": { url: "picture/酒館.png", scaleW: 2.2, scaleH: 2.2, offsetX: 2, offsetY: 2 },
+    "海上餐廳": { url: "picture/餐廳.png", scaleW: 1.5, scaleH: 1.5, offsetX: 2, offsetY: 0 },
+    "沈船點": { url: "picture/沈船.png", scaleW: 2.1, scaleH: 2.1, offsetX: 5, offsetY: 2 },
+    "人魚島": { url: "picture/人魚島.png", scaleW: 2.2, scaleH: 2.2, offsetX: 0, offsetY: -7 },
+    "珍寶點": { url: "picture/珍寶.png", scaleW: 3.1, scaleH: 3.1, offsetX: 0, offsetY: 0 } 
+};

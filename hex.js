@@ -42,7 +42,7 @@ function getFeatureAt(q, r) {
     if (isBase) return { type: FEATURE_TYPES.BASE, guildId: isBase.guildId };
     
     const isFac = MAP_FEATURES.FACILITIES.find(f => f.q === q && f.r === r);
-    if (isFac) return { type: FEATURE_TYPES.FACILITY, level: isFac.level };
+    if (isFac) return { type: FEATURE_TYPES.FACILITY, level: isFac.level, name: isFac.name};
     
     const isBuff = MAP_FEATURES.BUFFS.find(b => b.q === q && b.r === r);
     if (isBuff) return { type: FEATURE_TYPES.BUFF, name: isBuff.name };
@@ -108,7 +108,7 @@ for (let q = 0; q < COLS; q++) {
 
     const feature = getFeatureAt(q, r);
 
-    if (feature) {
+    /*if (feature) { ///廢棄
       hex.dataset.type = feature.type;
       if (feature.type === FEATURE_TYPES.BASE) {
         hex.dataset.guildId = feature.guildId;
@@ -121,6 +121,25 @@ for (let q = 0; q < COLS; q++) {
       }else if (feature.type === FEATURE_TYPES.BUFF) {
         addSpecialEffect(x, y, "hex-buff", "🧜‍♀️");
       }else if (feature.type === FEATURE_TYPES.OBSTACLE) {
+        hex.classList.add("hex-obstacle");
+      }
+    }*/
+
+    if (feature) {
+      hex.dataset.type = feature.type;
+      if (feature.type === FEATURE_TYPES.BASE) {
+        hex.dataset.guildId = feature.guildId;
+        hex.style.fill = GUILD_CONFIG[feature.guildId].color;
+        addFeatureImage(x, y, "公會船"); // 替換
+
+      } else if (feature.type === FEATURE_TYPES.FACILITY) {
+        hex.dataset.level = feature.level;
+        addFeatureImage(x, y, feature.name); // 直接傳入設施名稱(水手酒館, 珍寶點等)
+
+      } else if (feature.type === FEATURE_TYPES.BUFF) {
+        addFeatureImage(x, y, "人魚島"); // 替換
+
+      } else if (feature.type === FEATURE_TYPES.OBSTACLE) {
         hex.classList.add("hex-obstacle");
       }
     }
@@ -172,7 +191,8 @@ for (let q = 0; q < COLS; q++) {
   }
 }
 
-// 輔助函式：在地圖上放圖示
+//廢棄 - 地圖上放圖示
+/*
 function addSpecialEffect(cx, cy, className, iconText) {
     // 1. 建立一個虛擬的發光層（僅有邊框，填色透明）
     const effectHex = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
@@ -189,6 +209,26 @@ function addSpecialEffect(cx, cy, className, iconText) {
     text.setAttribute("class", "hex-icon");
     text.textContent = iconText;
     effectLayer.appendChild(text);
+}*/
+
+//繪製設施底圖
+function addFeatureImage(cx, cy, featureName) {
+    const asset = IMAGE_ASSETS[featureName];
+    if (!asset || !asset.url) return; //沒找到就退出
+
+    const img = document.createElementNS("http://www.w3.org/2000/svg", "image");
+    img.setAttribute("href", asset.url);
+    img.setAttribute("class", "feature-image");
+
+    const sizeW = HEX_WIDTH * asset.scaleW;
+    const sizeH = HEX_HEIGHT * asset.scaleH;
+    
+    img.setAttribute("width", sizeW);
+    img.setAttribute("height", sizeH);
+    img.setAttribute("x", cx - (sizeW / 2) + asset.offsetX);
+    img.setAttribute("y", cy - (sizeH / 2) + asset.offsetY);
+    
+    document.getElementById("feature-image-layer").appendChild(img);
 }
 
 //地圖上建立戰術標記
