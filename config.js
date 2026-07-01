@@ -58,22 +58,22 @@ const FEATURE_TYPES = {
 const MAP_FEATURES = {
     //公會據點
     BASE: [ 
-        { q: 1, r: 3, guildId: 1},
-        { q: 1, r: 7, guildId: 2},
-        { q: 1, r: 21, guildId: 3},
-        { q: 1, r: 25, guildId: 4},
+        { q: 8, r: 0, guildId: 1},
+        { q: 1, r: 21, guildId: 2},
+        { q: 21, r: 28, guildId: 3},
+        { q: 27, r: 7, guildId: 4},
         { q: 4, r: 0, guildId: 5},
-        { q: 3, r: 28, guildId: 6},
-        { q: 8, r: 0, guildId: 7},
-        { q: 7, r: 28, guildId: 8},
-        { q: 20, r: 0, guildId: 9},
-        { q: 21, r: 28, guildId: 10},
-        { q: 24, r: 0, guildId: 11},
-        { q: 25, r: 28, guildId: 12},
-        { q: 27, r: 3, guildId: 13},
-        { q: 27, r: 7, guildId: 14},
+        { q: 1, r: 25, guildId: 6},
+        { q: 25, r: 28, guildId: 7},
+        { q: 27, r: 3, guildId: 8},
+        { q: 1, r: 3, guildId: 9},
+        { q: 3, r: 28, guildId: 10},
+        { q: 27, r: 25, guildId: 11},
+        { q: 24, r: 0, guildId: 12},
+        { q: 1, r: 7, guildId: 13},
+        { q: 7, r: 28, guildId: 14},
         { q: 27, r: 21, guildId: 15},
-        { q: 27, r: 25, guildId: 16}
+        { q: 20, r: 0, guildId: 16}
     ],
     // 設施
     FACILITIES: [

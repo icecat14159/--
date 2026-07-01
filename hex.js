@@ -108,23 +108,6 @@ for (let q = 0; q < COLS; q++) {
 
     const feature = getFeatureAt(q, r);
 
-    /*if (feature) { ///廢棄
-      hex.dataset.type = feature.type;
-      if (feature.type === FEATURE_TYPES.BASE) {
-        hex.dataset.guildId = feature.guildId;
-        hex.style.fill = GUILD_CONFIG[feature.guildId].color;
-        addSpecialEffect(x, y, "hex-base", "🚢");
-      }else if (feature.type === FEATURE_TYPES.FACILITY) {
-        hex.dataset.level = feature.level;
-        const icon = feature.level >= 3 ? "🏯" : "🏠";
-        addSpecialEffect(x, y, "hex-facility", icon);
-      }else if (feature.type === FEATURE_TYPES.BUFF) {
-        addSpecialEffect(x, y, "hex-buff", "🧜‍♀️");
-      }else if (feature.type === FEATURE_TYPES.OBSTACLE) {
-        hex.classList.add("hex-obstacle");
-      }
-    }*/
-
     if (feature) {
       hex.dataset.type = feature.type;
       if (feature.type === FEATURE_TYPES.BASE) {
@@ -190,26 +173,6 @@ for (let q = 0; q < COLS; q++) {
     effectLayer.appendChild(blockedMark);
   }
 }
-
-//廢棄 - 地圖上放圖示
-/*
-function addSpecialEffect(cx, cy, className, iconText) {
-    // 1. 建立一個虛擬的發光層（僅有邊框，填色透明）
-    const effectHex = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
-    effectHex.setAttribute("points", hexPoints(cx, cy, HEX_SIZE*0.9));
-    effectHex.setAttribute("class", `hex-effect ${className}`);
-    effectHex.setAttribute("fill", "transparent");
-    effectHex.style.pointerEvents = "none"; // 不干擾點擊
-    effectLayer.appendChild(effectHex);
-
-    // 2. 建立圖示
-    const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
-    text.setAttribute("x", cx);
-    text.setAttribute("y", cy);
-    text.setAttribute("class", "hex-icon");
-    text.textContent = iconText;
-    effectLayer.appendChild(text);
-}*/
 
 //繪製設施底圖
 function addFeatureImage(cx, cy, featureName) {

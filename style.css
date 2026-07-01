@@ -185,9 +185,6 @@ body { /*網頁背景*/
     filter: drop-shadow(1px 2px 2px rgba(0,0,0,0.5)); /* 陰影立體感 */
     transition: filter 0.2s;
 }
-.is-interacting .map-marker-group { /* 效能改善 拖曳縮放時移除陰影 */
-    filter: none !important;
-}
 .map-marker-pin { /* 圖釘針頭 */
     fill: #ffffff;
     stroke: #999999;
@@ -341,16 +338,7 @@ body { /*網頁背景*/
 .hex-obstacle {
     stroke-width: 1;
 }
-/* 確保圖案永遠在最上面 */
-.hex-icon {
-    pointer-events: none;
-    user-select: none;
-    font-size: 20px;
-    text-anchor: middle;
-    dominant-baseline: central;
-    fill: white;
-    text-shadow: 0 0 3px black; /* 增加文字辨識度 */
-}
+
 /* 封鎖標誌樣式 */
 .hex-blocked-mark {
     fill: none;
@@ -398,13 +386,13 @@ body { /*網頁背景*/
     /* 確保變換中心點正確*/
     transform-origin: 0 0; 
 }
-/* 2. 當地圖處於「互動中」狀態時，強制關閉所有濾鏡與陰影 */
+
+/*當地圖處於「互動中」狀態時關閉所有濾鏡與陰影 */
+.is-interacting .map-marker-group,
 .is-interacting .guild-outline,
 .is-interacting .arrow-green,
-.is-interacting .arrow-red,
-.is-interacting .hex-facility,
-.is-interacting .hex-buff {
-    filter: none !important; /* 關鍵：移除模糊運算 */
+.is-interacting .arrow-red{
+    filter: none !important; /* 移除模糊運算 */
 }
 
 /* 排行榜專用顯示模式 */
