@@ -1,33 +1,45 @@
+// hex.js - 六角網格地圖渲染與互動
+
 const svg = document.getElementById("hexMap");
 const viewport = document.getElementById("viewport");
 
-const HEX_SIZE = 30;        // 六邊形半徑
-const COLS = 29;            // 寬格數
-const ROWS = 29;             // 高格數
+const HEX_SIZE = 30;                            // 六邊形半徑
+const COLS = 29;                                // 橫向格數
+const ROWS = 29;                                // 縱向格數
 
-const HEX_WIDTH = 2 * HEX_SIZE; //每格寬
-const HEX_HEIGHT = Math.sqrt(3) * HEX_SIZE; //每格高
+const HEX_WIDTH = 2 * HEX_SIZE;                 // 每格外接圓直徑寬
+const HEX_HEIGHT = Math.sqrt(3) * HEX_SIZE;     // 每格高
 
 const MAP_WIDTH = (COLS - 1) * (HEX_SIZE * 1.5) + HEX_SIZE * 2;
 const MAP_HEIGHT = ROWS * HEX_HEIGHT + HEX_HEIGHT / 2;
 
-// SVG 尺寸
+// 設定 SVG 尺寸
 svg.setAttribute("width", MAP_WIDTH);
 svg.setAttribute("height", MAP_HEIGHT);
 
-//六邊形六個角點座標
+// 拖曳與滑鼠狀態
+let dragStartTranslateX = 0;
+let dragStartTranslateY = 0;
+let isMouseDown = false;
+let isDragging = false;
+let startX = 0, startY = 0;
+let scale = 1;
+let translateX = 0;
+let translateY = 0;
+
+// 計算六邊形六個頂點座標 (平頂六角形)
 function hexPoints(cx, cy, size) {
-  const points = [];
-  for (let i = 0; i < 6; i++) { //6頂點
-    const angle = Math.PI / 180 * (60 * i); //弧度
-    const x = cx + size * Math.cos(angle);
-    const y = cy + size * Math.sin(angle);
-    points.push(`${x},${y}`);
-  }
-  return points.join(" ");
+    const points = [];
+    for (let i = 0; i < 6; i++) {
+        const angle = Math.PI / 180 * (60 * i);
+        const x = cx + size * Math.cos(angle);
+        const y = cy + size * Math.sin(angle);
+        points.push(`${x},${y}`);
+    }
+    return points.join(" ");
 }
 
-//轉換 q, r 座標
+// 軸座標 (q, r) 轉像素中心 (x, y) (平頂，奇數列往上偏移)
 function hexToPixel(q, r) {
     const x = q * (HEX_SIZE * 1.5) + HEX_SIZE;
     let y = r * HEX_HEIGHT + HEX_HEIGHT / 2;
@@ -37,12 +49,13 @@ function hexToPixel(q, r) {
     return { x, y };
 }
 
+// 取得特定座標的地圖要素
 function getFeatureAt(q, r) {
     const isBase = MAP_FEATURES.BASE.find(b => b.q === q && b.r === r);
     if (isBase) return { type: FEATURE_TYPES.BASE, guildId: isBase.guildId };
     
     const isFac = MAP_FEATURES.FACILITIES.find(f => f.q === q && f.r === r);
-    if (isFac) return { type: FEATURE_TYPES.FACILITY, level: isFac.level, name: isFac.name};
+    if (isFac) return { type: FEATURE_TYPES.FACILITY, level: isFac.level, name: isFac.name };
     
     const isBuff = MAP_FEATURES.BUFFS.find(b => b.q === q && b.r === r);
     if (isBuff) return { type: FEATURE_TYPES.BUFF, name: isBuff.name };
@@ -53,11 +66,9 @@ function getFeatureAt(q, r) {
     return null;
 }
 
-// 重構：統一的佔領函式
-function occupyTile(element, isClickAction = false) {
-    if (element.dataset.restricted === "true") {
-        return;
-    }
+// 統一佔領函式
+function occupyTile(element) {
+    if (element.dataset.restricted === "true") return;
     const type = element.dataset.type;
     if (type === FEATURE_TYPES.BASE || type === FEATURE_TYPES.OBSTACLE) return;
 
@@ -65,119 +76,169 @@ function occupyTile(element, isClickAction = false) {
     element.dataset.guildId = guildId;
 
     if (guildId === 0) {
-        // 關鍵修正：如果是公海，清除行內樣式，讓 CSS :hover 生效
         element.style.fill = ""; 
     } else {
-        // 其他公會則設定顏色
         element.style.fill = GUILD_CONFIG[guildId].color;
     }
 }
 
-//重計算函式
+// 重計算全地圖邏輯與標籤
 function refreshAllLogic() {
-    updateConnectivity(); //重算連通性
-    updateGuildOutlines(); //重算公會邊界
-    updateIndicators(); //重算戰術箭頭
-    updateLeaderboard(); //重算排行榜
+    updateConnectivity();      // 連通性檢查 (封鎖判斷)
+    updateGuildOutlines();     // 領地外圍發光邊框
+    updateIndicators();        // 人魚島與封鎖箭頭指示
+    updateBaseLabels();        // 項目 1：公會據點(船)名稱
+    updateTerritoryLabels();   // 項目 2：公會最大片佔領海域勢力名稱
+    updateLeaderboard();       // 設施統計數據
 }
 
+// --- 項目 3：筆刷演算法與視覺預覽 ---
+
+// 利用 BFS 計算筆刷半徑內的全部格子
+function getBrushHexes(centerQ, centerR, brushSize) {
+    const radius = brushSize - 1;
+    const result = [];
+    const visited = new Set();
+    const queue = [{ q: centerQ, r: centerR, dist: 0 }];
+    visited.add(`${centerQ},${centerR}`);
+
+    while (queue.length > 0) {
+        const { q, r, dist } = queue.shift();
+        const hex = document.querySelector(`.hex[data-q="${q}"][data-r="${r}"]`);
+        if (hex) {
+            result.push(hex);
+        }
+
+        if (dist < radius) {
+            getNeighbors(q, r).forEach(n => {
+                const key = `${n.q},${n.r}`;
+                if (!visited.has(key) && n.q >= 0 && n.q < COLS && n.r >= 0 && n.r < ROWS) {
+                    visited.add(key);
+                    queue.push({ q: n.q, r: n.r, dist: dist + 1 });
+                }
+            });
+        }
+    }
+    return result;
+}
+
+// 高亮顯示筆刷涵蓋格子
+function highlightBrushHover(centerHex) {
+    clearBrushHover();
+    if (!getQuickFillStatus()) return;
+
+    const q = parseInt(centerHex.dataset.q);
+    const r = parseInt(centerHex.dataset.r);
+    const hexes = getBrushHexes(q, r, getBrushSize());
+
+    hexes.forEach(h => {
+        if (h.dataset.restricted !== "true" && h.dataset.type !== FEATURE_TYPES.OBSTACLE) {
+            h.classList.add("brush-hover");
+        }
+    });
+}
+
+// 清除筆刷高亮
+function clearBrushHover() {
+    document.querySelectorAll(".hex.brush-hover").forEach(h => h.classList.remove("brush-hover"));
+}
+
+// 執行筆刷範圍塗抹佔領
+function paintWithBrush(centerHex) {
+    const q = parseInt(centerHex.dataset.q);
+    const r = parseInt(centerHex.dataset.r);
+    const hexes = getBrushHexes(q, r, getBrushSize());
+    hexes.forEach(h => occupyTile(h));
+}
+
+// --- 初始化生成棋盤 ---
 const gridLayer = document.getElementById("grid-layer");
 const effectLayer = document.getElementById("effect-layer");
-// 建立棋盤
+
 for (let q = 0; q < COLS; q++) {
-  for (let r = 0; r < ROWS; r++) {
-    // 水平間距
-    const x = q * (HEX_SIZE * 1.5) + HEX_SIZE;
-    // 垂直間距
-    let y = r * HEX_HEIGHT + HEX_HEIGHT/2;
-    // 奇數列向上偏移半高
-    if (q % 2 === 1) {
-      y -= HEX_HEIGHT / 2;
-    }
+    for (let r = 0; r < ROWS; r++) {
+        const { x, y } = hexToPixel(q, r);
 
-    const hex = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
-    hex.setAttribute("points", hexPoints(x, y, HEX_SIZE));
-    hex.setAttribute("class", "hex");
-    
-    hex.dataset.q = q;
-    hex.dataset.r = r;
-
-    hex.dataset.guildId = 0; // 初始公會為中立
-    hex.dataset.type = TILE_TYPES.LAND; // 預設為可佔領格
-    hex.dataset.id = `${q},${r}`;
-
-    const feature = getFeatureAt(q, r);
-
-    if (feature) {
-      hex.dataset.type = feature.type;
-      if (feature.type === FEATURE_TYPES.BASE) {
-        hex.dataset.guildId = feature.guildId;
-        hex.style.fill = GUILD_CONFIG[feature.guildId].color;
-        addFeatureImage(x, y, "公會船"); // 替換
-
-      } else if (feature.type === FEATURE_TYPES.FACILITY) {
-        hex.dataset.level = feature.level;
-        addFeatureImage(x, y, feature.name); // 直接傳入設施名稱(水手酒館, 珍寶點等)
-
-      } else if (feature.type === FEATURE_TYPES.BUFF) {
-        addFeatureImage(x, y, "人魚島"); // 替換
-
-      } else if (feature.type === FEATURE_TYPES.OBSTACLE) {
-        hex.classList.add("hex-obstacle");
-      }
-    }
-    
-    //滑鼠移入事件
-    hex.addEventListener("mouseenter", function() {
-        if (getQuickFillStatus() && isMouseDown) { //只在快速佔領開啟且滑鼠左鍵按下時才觸發
-            occupyTile(this);
-        }
-    });
-
-    //滑鼠點擊事件
-    hex.addEventListener("click", function(e) {
-        if (getQuickFillStatus()) return; //快速佔領模式時改由 mouseenter 處理
+        const hex = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
+        hex.setAttribute("points", hexPoints(x, y, HEX_SIZE));
+        hex.setAttribute("class", "hex");
         
-        const distMoved = Math.hypot(translateX - dragStartTranslateX, translateY - dragStartTranslateY);
-        if (distMoved > 3) return; //撇除拖曳行為
-        
-        const markerStatus = getMarkerToolStatus(); //判斷目前模式
-        if (markerStatus.type) {
-            placeMarker(this, markerStatus.type, markerStatus.value); //進行標記
-        } else {
-            occupyTile(this); //進行佔領
-            refreshAllLogic(); //重計算
+        hex.dataset.q = q;
+        hex.dataset.r = r;
+        hex.dataset.guildId = 0; // 初始為公海中立
+        hex.dataset.type = TILE_TYPES.LAND;
+        hex.dataset.id = `${q},${r}`;
+
+        const feature = getFeatureAt(q, r);
+
+        if (feature) {
+            hex.dataset.type = feature.type;
+            if (feature.type === FEATURE_TYPES.BASE) {
+                hex.dataset.guildId = feature.guildId;
+                hex.style.fill = GUILD_CONFIG[feature.guildId].color;
+                addFeatureImage(x, y, "公會船");
+            } else if (feature.type === FEATURE_TYPES.FACILITY) {
+                hex.dataset.level = feature.level;
+                addFeatureImage(x, y, feature.name);
+            } else if (feature.type === FEATURE_TYPES.BUFF) {
+                addFeatureImage(x, y, "人魚島");
+            } else if (feature.type === FEATURE_TYPES.OBSTACLE) {
+                hex.classList.add("hex-obstacle");
+            }
         }
-    });
+        
+        // 滑鼠移入：筆刷高亮預覽與按住拖曳塗抹
+        hex.addEventListener("mouseenter", function() {
+            if (getQuickFillStatus()) {
+                highlightBrushHover(this);
+                if (isMouseDown) {
+                    paintWithBrush(this);
+                }
+            }
+        });
 
-    gridLayer.appendChild(hex);
+        // 點擊事件：支援標記工具與一般佔領
+        hex.addEventListener("click", function(e) {
+            if (getQuickFillStatus()) return; // 筆刷模式改由 mousedown 處理
+            
+            const distMoved = Math.hypot(translateX - dragStartTranslateX, translateY - dragStartTranslateY);
+            if (distMoved > 3) return; // 拖曳時不觸發點擊
+            
+            const markerStatus = getMarkerToolStatus();
+            if (markerStatus.type) {
+                placeMarker(this, markerStatus.type, markerStatus.value);
+            } else {
+                occupyTile(this);
+                refreshAllLogic();
+            }
+        });
 
-    // 為每一格建立專屬的封鎖叉號
-    const blockedMark = document.createElementNS("http://www.w3.org/2000/svg", "g");
-    blockedMark.setAttribute("class", "hex-blocked-mark");
-    blockedMark.setAttribute("id", `block-${q}-${r}`);
+        gridLayer.appendChild(hex);
 
-    // 繪製叉號的兩條線
-    const offset = HEX_SIZE * 0.4;
+        // 建立封鎖叉號標誌
+        const blockedMark = document.createElementNS("http://www.w3.org/2000/svg", "g");
+        blockedMark.setAttribute("class", "hex-blocked-mark");
+        blockedMark.setAttribute("id", `block-${q}-${r}`);
 
-    const line1 = document.createElementNS("http://www.w3.org/2000/svg", "line");
-    line1.setAttribute("x1", x - offset); line1.setAttribute("y1", y - offset);
-    line1.setAttribute("x2", x + offset); line1.setAttribute("y2", y + offset); // 修正點：這裡原本寫成 line2.setAttribute
+        const offset = HEX_SIZE * 0.4;
+        const line1 = document.createElementNS("http://www.w3.org/2000/svg", "line");
+        line1.setAttribute("x1", x - offset); line1.setAttribute("y1", y - offset);
+        line1.setAttribute("x2", x + offset); line1.setAttribute("y2", y + offset);
 
-    const line2 = document.createElementNS("http://www.w3.org/2000/svg", "line"); // 修正點：確保 line2 有被宣告
-    line2.setAttribute("x1", x + offset); line2.setAttribute("y1", y - offset);
-    line2.setAttribute("x2", x - offset); line2.setAttribute("y2", y + offset);
+        const line2 = document.createElementNS("http://www.w3.org/2000/svg", "line");
+        line2.setAttribute("x1", x + offset); line2.setAttribute("y1", y - offset);
+        line2.setAttribute("x2", x - offset); line2.setAttribute("y2", y + offset);
 
-    blockedMark.appendChild(line1);
-    blockedMark.appendChild(line2);
-    effectLayer.appendChild(blockedMark);
-  }
+        blockedMark.appendChild(line1);
+        blockedMark.appendChild(line2);
+        effectLayer.appendChild(blockedMark);
+    }
 }
 
-//繪製設施底圖
+// 繪製設施與公會船底圖
 function addFeatureImage(cx, cy, featureName) {
     const asset = IMAGE_ASSETS[featureName];
-    if (!asset || !asset.url) return; //沒找到就退出
+    if (!asset || !asset.url) return;
 
     const img = document.createElementNS("http://www.w3.org/2000/svg", "image");
     img.setAttribute("href", asset.url);
@@ -194,27 +255,22 @@ function addFeatureImage(cx, cy, featureName) {
     document.getElementById("feature-image-layer").appendChild(img);
 }
 
-//地圖上建立戰術標記
+// 地圖上建立戰術標記
 function placeMarker(hexElement, type, value) {
     const q = parseInt(hexElement.dataset.q);
     const r = parseInt(hexElement.dataset.r);
     
     const existingMarker = document.getElementById(`marker-${q}-${r}`);
-    if (existingMarker) { //清除該格既有標記
+    if (existingMarker) {
         existingMarker.remove();
     }
 
-    //清除模式下刪完就結束
     if (type === 'clear') return;
 
-    //設定繪製座標
     const { x, y } = hexToPixel(q, r);
-    const offsetX = 0;
-    const offsetY = -HEX_SIZE * 0.45; //稍微向上偏移
-    const pinX = x + offsetX;
-    const pinY = y + offsetY;
+    const pinX = x;
+    const pinY = y - HEX_SIZE * 0.45;
 
-    //定義顏色與圖示
     const config = {
         attack: { 
             color: "#fd7e14",
@@ -233,70 +289,66 @@ function placeMarker(hexElement, type, value) {
             path: "M1,21h22L12,2L1,21z M13,18h-2v-2h2V18z M13,14h-2v-4h2V14z"
         }
     };
-    const settings = config[type]; //取得目前選擇模式
-    if (!settings) return; //防錯機制 無模式立即退出
+    const settings = config[type];
+    if (!settings) return;
 
-    //建立標記主容器
     const group = document.createElementNS("http://www.w3.org/2000/svg", "g");
     group.setAttribute("id", `marker-${q}-${r}`);
     group.setAttribute("class", "map-marker-group");
     group.setAttribute("transform", `translate(${pinX}, ${pinY})`);
 
-    //繪製圖釘針頭
     const pinPoint = document.createElementNS("http://www.w3.org/2000/svg", "path");
     pinPoint.setAttribute("d", "M -5,0 L 0,13 L 5,0 Z");
     pinPoint.setAttribute("class", "map-marker-pin");
     pinPoint.setAttribute("transform", "translate(0, 5)");
     group.appendChild(pinPoint);
 
-    //繪製圖釘圓頭
     const head = document.createElementNS("http://www.w3.org/2000/svg", "circle");
     head.setAttribute("cx", 0);
     head.setAttribute("cy", 0);
     head.setAttribute("r", HEX_SIZE * 0.35);
-    head.setAttribute("fill", settings.color); //填入當前模式顏色
+    head.setAttribute("fill", settings.color);
     head.setAttribute("class", "map-marker-head");
     group.appendChild(head);
 
-    //顯示內容
-    if (value && value.length > 0) { //有數值時
+    if (value && value.length > 0) {
         const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
         text.setAttribute("x", 0);
         text.setAttribute("y", 1);
         text.setAttribute("class", "map-marker-text");
         text.textContent = value;
-        text.style.fontSize = (value.length >= 5) ? "7px" : (value.length >= 3) ? "9px" : "11px"; //依數值字數改變大小
+        text.style.fontSize = (value.length >= 5) ? "7px" : (value.length >= 3) ? "9px" : "11px";
         group.appendChild(text);
-    } else { //無數值時
+    } else {
         const iconPath = document.createElementNS("http://www.w3.org/2000/svg", "path");
-        iconPath.setAttribute("d", settings.path); //繪製圖案
+        iconPath.setAttribute("d", settings.path);
         iconPath.setAttribute("class", "map-marker-icon");
         iconPath.setAttribute("transform", "scale(0.55) translate(-12, -12)");
         group.appendChild(iconPath);
     }
-    document.getElementById("mark-layer").appendChild(group); //加入到標記圖層
+    document.getElementById("mark-layer").appendChild(group);
 }
 
+// 提供公會更新顏色時刷新地圖
 window.updateMapColors = function(guildId, newColor) {
-  const targets = document.querySelectorAll(`.hex[data-guild-id="${guildId}"]`);
-  targets.forEach(hex => {
-    hex.style.fill = newColor;
-  });
+    const targets = document.querySelectorAll(`.hex[data-guild-id="${guildId}"]`);
+    targets.forEach(hex => {
+        hex.style.fill = newColor;
+    });
 };
 
+// 繪製六角單邊外框
 function drawHexBoundary(q, r, sideIndex, color) {
     const { x, y } = hexToPixel(q, r);
-    // 關鍵：使用與 hexPoints 完全一致的邏輯
     const points = [];
     for (let i = 0; i < 6; i++) {
         const angle = Math.PI / 180 * (60 * i);
         points.push({
-            x: x + HEX_SIZE*0.9 * Math.cos(angle),
-            y: y + HEX_SIZE*0.9 * Math.sin(angle)
+            x: x + HEX_SIZE * 0.9 * Math.cos(angle),
+            y: y + HEX_SIZE * 0.9 * Math.sin(angle)
         });
     }
 
-    // 取得該邊的兩個端點
     const p1 = points[sideIndex];
     const p2 = points[(sideIndex + 1) % 6];
 
@@ -304,7 +356,6 @@ function drawHexBoundary(q, r, sideIndex, color) {
     line.setAttribute("x1", p1.x); line.setAttribute("y1", p1.y);
     line.setAttribute("x2", p2.x); line.setAttribute("y2", p2.y);
     
-    // 視覺微調：使用顏色與發光
     line.setAttribute("stroke", color);
     line.setAttribute("stroke-width", "4"); 
     line.setAttribute("stroke-linecap", "round");
@@ -315,169 +366,174 @@ function drawHexBoundary(q, r, sideIndex, color) {
     document.getElementById("effect-layer").appendChild(line);
 }
 
-//縮放與拖曳
-let scale = 1;  //縮放
-let translateX = 0; //左右拖
-let translateY = 0; //上下拖
-let isDragging = false;
-let startX, startY;
-
-// 更新畫面變換
+// 變換矩陣更新
 function updateTransform() {
-  viewport.setAttribute("transform", `translate(${translateX}, ${translateY}) scale(${scale})`);
+    viewport.setAttribute("transform", `translate(${translateX}, ${translateY}) scale(${scale})`);
 }
 
-//拖曳邊界
+// 拖曳邊界限制
 function clampTranslate() {
-  const rect = svg.getBoundingClientRect();
+    const rect = svg.getBoundingClientRect();
+    const viewW = rect.width;
+    const viewH = rect.height;
 
-  const viewW = rect.width;
-  const viewH = rect.height;
+    const mapW = MAP_WIDTH * scale;
+    const mapH = MAP_HEIGHT * scale;
+    const OVER_SCROLL = 150;
 
-  const mapW = MAP_WIDTH * scale;
-  const mapH = MAP_HEIGHT * scale;
+    let minX, maxX;
+    if (mapW <= viewW) {
+        minX = -OVER_SCROLL;
+        maxX = OVER_SCROLL;
+    } else {
+        minX = viewW - mapW - OVER_SCROLL;
+        maxX = OVER_SCROLL;
+    }
 
-  //彈性邊界
-  const OVER_SCROLL = 150;
+    let minY, maxY;
+    if (mapH <= viewH) {
+        minY = -OVER_SCROLL;
+        maxY = OVER_SCROLL;
+    } else {
+        minY = viewH - mapH - OVER_SCROLL;
+        maxY = OVER_SCROLL;
+    }
 
-  // 計算 X 軸邊界
-  let minX, maxX;
-  if (mapW <= viewW) {
-    // 地圖比視窗小：固定在左側 (0) 或 稍微偏移
-    minX = -OVER_SCROLL;
-    maxX = OVER_SCROLL;
-  } else {
-    // 地圖比視窗大：限制拖曳範圍
-    minX = viewW - mapW - OVER_SCROLL;
-    maxX = OVER_SCROLL;
-  }
-
-  // 計算 Y 軸邊界
-  let minY, maxY;
-  if (mapH <= viewH) {
-    minY = -OVER_SCROLL;
-    maxY = OVER_SCROLL;
-  } else {
-    minY = viewH - mapH - OVER_SCROLL;
-    maxY = OVER_SCROLL;
-  }
-
-  translateX = Math.min(Math.max(translateX, minX), maxX);
-  translateY = Math.min(Math.max(translateY, minY), maxY);
+    translateX = Math.min(Math.max(translateX, minX), maxX);
+    translateY = Math.min(Math.max(translateY, minY), maxY);
 }
 
 // --- 滾輪縮放 ---
 let wheelTimeout;
 svg.addEventListener("wheel", (e) => {
-  e.preventDefault(); // 防止網頁捲動
+    e.preventDefault();
 
-  if (!svg.classList.contains("is-interacting")) {
-      svg.classList.add("is-interacting");
-  }
+    if (!svg.classList.contains("is-interacting")) {
+        svg.classList.add("is-interacting");
+    }
 
-  clearTimeout(wheelTimeout);
-  wheelTimeout = setTimeout(() => {
-      svg.classList.remove("is-interacting");
-  }, 100);
+    clearTimeout(wheelTimeout);
+    wheelTimeout = setTimeout(() => {
+        svg.classList.remove("is-interacting");
+    }, 100);
 
-  const zoomSpeed = 0.1;
-  const delta = e.deltaY > 0 ? -zoomSpeed : zoomSpeed;
-  const oldScale = scale;
-  
-  // 限制縮放範圍
-  scale = Math.min(Math.max(0.4, scale + delta), 2);
+    const zoomSpeed = 0.1;
+    const delta = e.deltaY > 0 ? -zoomSpeed : zoomSpeed;
+    const oldScale = scale;
+    
+    scale = Math.min(Math.max(0.4, scale + delta), 2);
 
-  // 計算縮放中心偏移（讓縮放跟隨鼠標）
-  const rect = svg.getBoundingClientRect();
-  const mouseX = e.clientX - rect.left;
-  const mouseY = e.clientY - rect.top;
+    const rect = svg.getBoundingClientRect();
+    const mouseX = e.clientX - rect.left;
+    const mouseY = e.clientY - rect.top;
 
-  // 補償位移量，使鼠標指向的座標在縮放前後保持一致
-  translateX -= (mouseX - translateX) * (scale / oldScale - 1);
-  translateY -= (mouseY - translateY) * (scale / oldScale - 1);
+    translateX -= (mouseX - translateX) * (scale / oldScale - 1);
+    translateY -= (mouseY - translateY) * (scale / oldScale - 1);
 
-  clampTranslate();
-  updateTransform();
+    clampTranslate();
+    updateTransform();
 }, { passive: false });
 
-let isMouseDown = false; // 新增全域變數
-// --- 滑鼠拖曳 ---
+// 禁用地圖右鍵選單 (方便右鍵拖曳)
+svg.addEventListener("contextmenu", (e) => {
+    e.preventDefault();
+});
+
+// 滑鼠離開地圖時清除筆刷預覽
+svg.addEventListener("mouseleave", () => {
+    clearBrushHover();
+});
+
+// --- 滑鼠按下 ---
 svg.addEventListener("mousedown", (e) => {
-  isMouseDown = true;
-  dragStartTranslateX = translateX;
-  dragStartTranslateY = translateY;
-  // 如果快速佔領關閉，才執行原本的拖曳初始化
-  if (!getQuickFillStatus()) {
-    if (e.target.tagName === "svg" || e.target.tagName === "polygon") {
+    isMouseDown = true;
+    dragStartTranslateX = translateX;
+    dragStartTranslateY = translateY;
+
+    // 滑鼠右鍵或中鍵，始終支援拖曳地圖
+    if (e.button === 1 || e.button === 2) {
         isDragging = true;
         startX = e.clientX - translateX;
         startY = e.clientY - translateY;
         svg.style.cursor = "grabbing";
         svg.classList.add("is-interacting");
+        return;
     }
-  } else if (e.target.tagName === "polygon") {
-    // 快速模式下，點下去的那一格也要佔領
-    occupyTile(e.target);
-  }
+
+    // 左鍵點擊
+    if (!getQuickFillStatus()) {
+        // 筆刷關閉：一般模式支援拖曳
+        if (e.target.tagName === "svg" || e.target.tagName === "polygon" || e.target.id === "map-background") {
+            isDragging = true;
+            startX = e.clientX - translateX;
+            startY = e.clientY - translateY;
+            svg.style.cursor = "grabbing";
+            svg.classList.add("is-interacting");
+        }
+    } else if (e.target.classList.contains("hex")) {
+        // 筆刷模式：左鍵點擊立即塗抹佔領筆刷範圍
+        paintWithBrush(e.target);
+    }
 });
 
+// --- 滑鼠移動拖曳 ---
 window.addEventListener("mousemove", (e) => {
-  if (!isDragging) return;
-  
-  translateX = e.clientX - startX;
-  translateY = e.clientY - startY;
-  
-  clampTranslate();
-  updateTransform();
+    if (!isDragging) return;
+    
+    translateX = e.clientX - startX;
+    translateY = e.clientY - startY;
+    
+    clampTranslate();
+    updateTransform();
 });
 
+// --- 滑鼠放開 ---
 window.addEventListener("mouseup", () => {
-  if (isMouseDown) {
-      refreshAllLogic();
-  }
-  isMouseDown = false;
-  isDragging = false;
-  svg.style.cursor = "default";
-  svg.classList.remove("is-interacting");
+    if (isMouseDown && getQuickFillStatus()) {
+        refreshAllLogic(); // 筆刷塗抹完畢後更新連通性、邊框、勢力標籤與計分
+    }
+    isMouseDown = false;
+    isDragging = false;
+    svg.style.cursor = getQuickFillStatus() ? "crosshair" : "default";
+    svg.classList.remove("is-interacting");
 });
 
+// 更新底圖尺寸與透明度
 function updateBackgroundSize() {
     const bg = document.getElementById("map-background");
     if (bg) {
-        // 讓圖片寬度等於地圖計算出來的總寬度
         bg.setAttribute("width", MAP_WIDTH);
         bg.setAttribute("height", MAP_HEIGHT);
-        
-        // 稍微調整位移，補足六角格生成的邊際空間
         bg.setAttribute("x", 0);
-        bg.setAttribute("y", -(HEX_HEIGHT/2));
-        
-        // 調整底圖透明度，方便觀察格子覆蓋情況
+        bg.setAttribute("y", -(HEX_HEIGHT / 2));
         bg.setAttribute("opacity", "0.6"); 
     }
 }
 
+// 居中地圖初始位置
 function initMapPosition() {
-  updateBackgroundSize();
+    updateBackgroundSize();
 
-  const rect = svg.getBoundingClientRect();
-  // 將地圖中心對準視窗中心
-  translateX = (rect.width - MAP_WIDTH * scale) / 2;
-  translateY = (rect.height - MAP_HEIGHT * scale) / 2;
-  
-  // 執行一次邊界檢查，確保不超出我們設定的彈性範圍
-  clampTranslate(); 
-  updateTransform();
+    const rect = svg.getBoundingClientRect();
+    translateX = (rect.width - MAP_WIDTH * scale) / 2;
+    translateY = (rect.height - MAP_HEIGHT * scale) / 2;
+    
+    clampTranslate(); 
+    updateTransform();
 }
 
-// 在生成完所有格子後執行
+// 執行地圖位置初始化
 initMapPosition();
 
-// 如果視窗大小改變，重新調整位置
+// 監聽視窗縮放
 window.addEventListener('resize', initMapPosition);
 
+// 延遲載入第一階段與標籤
 setTimeout(() => {
+    if (typeof updateBaseLabels === "function") {
+        updateBaseLabels();
+    }
     if (typeof updateMapPhase === "function") {
-        updateMapPhase(1); // 預設開啟第一期
+        updateMapPhase(1);
     }
 }, 100);

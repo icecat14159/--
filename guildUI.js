@@ -1,120 +1,214 @@
-//當側邊攔開關按鈕按下
-function toggleSidebar(){  
-    const sidebar = document.getElementById("ui-sidebar"); //抓取開關按鈕CSS樣式
-    const toggleBtn = document.getElementById("menu-toggle"); //側邊攔容器樣式
+// guildUI.js - 使用者介面互動與控制
+
+// 側邊欄開關
+function toggleSidebar() {  
+    const sidebar = document.getElementById("ui-sidebar");
+    const toggleBtn = document.getElementById("menu-toggle");
     
-    if(sidebar.classList.contains("sidebar-open")){ //關閉時顯示選單圖示
-        sidebar.classList.remove("sidebar-open"); //更改狀態
+    if (sidebar.classList.contains("sidebar-open")) {
+        sidebar.classList.remove("sidebar-open");
         sidebar.classList.add("sidebar-closed");
-        toggleBtn.innerText = "☰"; //更改顯示圖示
-    }else{    //開啟時顯示關閉圖示
+        toggleBtn.innerText = "☰";
+    } else {
         sidebar.classList.remove("sidebar-closed");
         sidebar.classList.add("sidebar-open");
         toggleBtn.innerText = "✕";
     }
 }
 
-//側邊攔分頁切換
-function switchTab(tabName){
-    //切換按鈕狀態
-    document.querySelectorAll('.tab-btn').forEach(btn => { //找出所有 class=tab-btn 物件
-        btn.classList.remove('active'); //先清除狀態
-        if(btn.innerText.includes(tabName === 'selector' ? '列表' : '統計')){ //重新賦予狀態 //!!需改善
+// 側邊欄分頁切換
+function switchTab(tabName) {
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.remove('active');
+        if (btn.innerText.includes(tabName === 'selector' ? '列表' : '統計')) {
             btn.classList.add('active');
         }
     });
 
-    //切換內容顯示
-    const toolPanel = document.getElementById("tool-panel"); //公會列表功能部分CSS
-    const selector = document.getElementById("guild-selector"); //公會列表公會部分CSS
-    const leaderboard = document.getElementById("leaderboard-panel"); //設施統計部分CSS
+    const toolPanel = document.getElementById("tool-panel");
+    const selector = document.getElementById("guild-selector");
+    const leaderboard = document.getElementById("leaderboard-panel");
 
-    if(tabName === 'selector'){
+    if (tabName === 'selector') {
         toolPanel.style.display = 'block';
         selector.style.display = 'flex';
         leaderboard.style.display = 'none';
-    }else{
+    } else {
         toolPanel.style.display = 'none';
         selector.style.display = 'none';
         leaderboard.style.display = 'block';
-        updateLeaderboard(); //切換過來時刷新數據
+        updateLeaderboard(); // 切換時即時刷新統計
     }
 }
 
-let isQuickFillActive = false; //是否啟用快速佔領
-//提供 hex.js 讀取快速佔領啟用狀態
-function getQuickFillStatus(){
+// --- 項目 3：快速佔領改進（筆刷功能與大小調節） ---
+let isQuickFillActive = false; // 是否啟用筆刷佔領
+let currentBrushSize = 1;      // 筆刷大小 (1: 1格, 2: 7格, 3: 19格, 4: 37格)
+
+function getQuickFillStatus() {
     return isQuickFillActive;
 }
 
-//切換快速佔領
-function toggleQuickFill(){
-    isQuickFillActive = !isQuickFillActive;
-    const btn = document.getElementById("quick-fill-toggle");
-    btn.innerText = `快速佔領：${isQuickFillActive ? "ON" : "OFF"}`; //按鈕文字變化
-    btn.classList.toggle("active", isQuickFillActive); //加上或移除 active 類別
+function getBrushSize() {
+    return currentBrushSize;
 }
 
-let isLandmarksHidden = false; //是否啟用地標顯示
-//切換地標顯示
-function toggleLandmarks(){
+// 切換筆刷佔領狀態
+function toggleQuickFill() {
+    isQuickFillActive = !isQuickFillActive;
+    const btn = document.getElementById("quick-fill-toggle");
+    if (btn) {
+        btn.innerText = `筆刷佔領：${isQuickFillActive ? "ON" : "OFF"}`;
+        btn.classList.toggle("active", isQuickFillActive);
+    }
+    
+    // 地圖指標變化
+    const map = document.getElementById("hexMap");
+    if (map) {
+        map.style.cursor = isQuickFillActive ? "crosshair" : "default";
+    }
+
+    if (!isQuickFillActive && typeof clearBrushHover === 'function') {
+        clearBrushHover();
+    }
+}
+
+// 設定筆刷大小
+function setBrushSize(size) {
+    currentBrushSize = Math.max(1, Math.min(4, size));
+    
+    const sizeLabels = {
+        1: "1 格 (單格)",
+        2: "7 格 (半徑1)",
+        3: "19 格 (半徑2)",
+        4: "37 格 (半徑3)"
+    };
+    
+    const display = document.getElementById("brush-size-display");
+    if (display) {
+        display.innerText = sizeLabels[currentBrushSize] || `${currentBrushSize} 格`;
+    }
+
+    const slider = document.getElementById("brush-size-slider");
+    if (slider) {
+        slider.value = currentBrushSize;
+    }
+
+    document.querySelectorAll(".brush-size-btn").forEach(btn => {
+        btn.classList.toggle("active", parseInt(btn.dataset.size) === currentBrushSize);
+    });
+}
+
+// --- 項目 4：快速重置（一鍵清除某公會全部佔領海域） ---
+
+/**
+ * 清除指定公會的所有佔領海域（保留據點）
+ * @param {number} guildId - 目標公會ID
+ */
+function clearGuildTerritory(guildId) {
+    const guild = GUILD_CONFIG[guildId];
+    if (!guild || guildId === 0) return;
+
+    // 取得所有該公會佔領且非據點的格子
+    const occupiedTiles = Array.from(document.querySelectorAll(`.hex[data-guild-id="${guildId}"]:not([data-type="${FEATURE_TYPES.BASE}"])`));
+    
+    if (occupiedTiles.length === 0) {
+        alert(`【${guild.name}】目前沒有佔領任何海域。`);
+        return;
+    }
+
+    const confirmed = confirm(`確定要清除【${guild.name}】佔領的所有海域嗎？\n(共 ${occupiedTiles.length} 格海域將被重置為公海，公會據點將保留)`);
+    if (!confirmed) return;
+
+    occupiedTiles.forEach(hex => {
+        hex.dataset.guildId = "0";
+        hex.style.fill = "";
+    });
+
+    refreshAllLogic();
+}
+
+/**
+ * 一鍵清除目前選中公會的佔領海域
+ */
+function clearCurrentGuildTerritory() {
+    if (currentGuildId === 0) {
+        alert("目前選取的是「公海」，請先選擇要清除的特定公會！");
+        return;
+    }
+    clearGuildTerritory(currentGuildId);
+}
+
+/**
+ * 彈窗內一鍵清除
+ */
+function clearGuildTerritoryFromModal() {
+    if (editingGuildId && editingGuildId !== 0) {
+        clearGuildTerritory(editingGuildId);
+        closeModal();
+    }
+}
+
+// 地標顯示切換
+let isLandmarksHidden = false;
+function toggleLandmarks() {
     isLandmarksHidden = !isLandmarksHidden;
     const btn = document.getElementById("landmark-toggle");
     const map = document.getElementById("hexMap");
     
-    btn.innerText = `隱藏地標：${isLandmarksHidden ? "ON" : "OFF"}`; //按鈕文字變化
-    btn.classList.toggle("active", isLandmarksHidden); //加上或移除 active 類別
-    map.classList.toggle("hide-landmarks", isLandmarksHidden); //加上或移除 hide-landmarks 類別 
+    if (btn) {
+        btn.innerText = `隱藏地標：${isLandmarksHidden ? "ON" : "OFF"}`;
+        btn.classList.toggle("active", isLandmarksHidden);
+    }
+    if (map) {
+        map.classList.toggle("hide-landmarks", isLandmarksHidden);
+    }
 }
 
-//地圖階段切換
+// 地圖階段切換
 function setPhase(p) {
     updateMapPhase(p);
-    document.querySelectorAll('.phase-btn').forEach(btn => { //檢查每個按鈕
+    document.querySelectorAll('.phase-btn').forEach(btn => {
         btn.classList.remove('active');
-        if (btn.innerText.includes(p === 1 ? "一" : p === 2 ? "二" : "三")) { //為選中的按鈕加上 active 類別
+        if (btn.innerText.includes(p === 1 ? "一" : p === 2 ? "二" : "三")) {
             btn.classList.add('active');
         }
     });
 }
 
-//戰術標記狀態
-let currentMarkerTool = null; // null, 'attack', 'defend', 'ban', 'warn', 'clear'
-let currentMarkerValue = ""; //戰術標記數值
+// 戰術標記管理
+let currentMarkerTool = null;
+let currentMarkerValue = "";
 
-//戰術標記模式
 function selectMarkerTool(type) {
-    if (currentMarkerTool === type) { //點擊相同標記按鈕時退出
+    if (currentMarkerTool === type) {
         currentMarkerTool = null;
     } else {
         currentMarkerTool = type;
     }
 
-    document.querySelectorAll('.marker-btn').forEach(btn => { //找被選中的按鈕
+    document.querySelectorAll('.marker-btn').forEach(btn => {
         btn.classList.remove('active');
         if (currentMarkerTool === type && btn.classList.contains(type)) {
-            btn.classList.add('active'); //加入樣式
+            btn.classList.add('active');
         }
     });
 
-    //更改文字提示
     const statusText = document.getElementById("marker-status");
-    if (!currentMarkerTool) { //如果退出狀態
+    if (!currentMarkerTool) {
         statusText.innerText = "目前模式：無 (點擊佔領)";
         statusText.style.color = "#aaa";
-    } else { //依模式改變顯示
+    } else {
         const names = { attack: "進攻", defend: "防守", ban: "禁止", warn: "注意", clear: "清除" };
         statusText.innerText = `目前模式：${names[type]}`;
         statusText.style.color = "#fff";
     }
 }
 
-//填入數值
 function updateMarkerValue(val) {
     currentMarkerValue = val.trim();
 }
 
-//提供 hex.js 讀取戰術標記變數
 function getMarkerToolStatus() {
     return {
         type: currentMarkerTool,
@@ -122,12 +216,10 @@ function getMarkerToolStatus() {
     };
 }
 
-//整理至此
-// 狀態管理
+// --- 公會狀態管理與清單渲染 ---
 let currentGuildId = 0;
 let editingGuildId = null;
 
-//提供 hex.js 讀取
 function getCurrentGuildId() {
     return currentGuildId;
 }
@@ -140,10 +232,9 @@ function renderGuildSelectors() {
     Object.values(GUILD_CONFIG).forEach(guild => {
         const isSelected = (currentGuildId === guild.id);
         const wrapper = document.createElement("div");
-        // 如果被選中，加入 active class
         wrapper.className = `guild-item ${isSelected ? 'active' : ''}`;
 
-        // 點擊整行即可切換公會
+        // 點擊整行選取該公會
         wrapper.onclick = () => {
             currentGuildId = guild.id;
             renderGuildSelectors(); 
@@ -161,11 +252,24 @@ function renderGuildSelectors() {
         wrapper.appendChild(nameLabel);
 
         if (guild.id !== 0) {
+            // 一鍵重置該公會海域按鈕 (項目 4)
+            const resetBtn = document.createElement("button");
+            resetBtn.className = "reset-btn";
+            resetBtn.title = `清除【${guild.name}】所有海域`;
+            resetBtn.innerText = "🗑";
+            resetBtn.onclick = (e) => {
+                e.stopPropagation();
+                clearGuildTerritory(guild.id);
+            };
+            wrapper.appendChild(resetBtn);
+
+            // 編輯按鈕
             const editBtn = document.createElement("button");
             editBtn.className = "edit-btn";
+            editBtn.title = "編輯公會資訊";
             editBtn.innerText = "✎";
             editBtn.onclick = (e) => {
-                e.stopPropagation(); // 阻止觸發整行點擊
+                e.stopPropagation();
                 openEditModal(guild.id);
             };
             wrapper.appendChild(editBtn);
@@ -175,41 +279,14 @@ function renderGuildSelectors() {
     });
 }
 
-function openEditModal(id) {
-    editingGuildId = id;
-    const guild = GUILD_CONFIG[id];
-    document.getElementById("edit-name").value = guild.name;
-    document.getElementById("edit-color").value = guild.color;
-    document.getElementById("edit-modal").style.display = "flex";
-}
-
-function closeModal() {
-    document.getElementById("edit-modal").style.display = "none";
-}
-
-function saveGuildEdit() {
-    const newName = document.getElementById("edit-name").value;
-    const newColor = document.getElementById("edit-color").value;
-
-    GUILD_CONFIG[editingGuildId].name = newName;
-    GUILD_CONFIG[editingGuildId].color = newColor;
-
-    // 更新地圖顏色
-    if (typeof window.updateMapColors === 'function') {
-        window.updateMapColors(editingGuildId, newColor);
-    }
-
-    renderGuildSelectors();
-    closeModal();
-}
-
+// 開啟公會編輯視窗 (整合自選與色票)
 function openEditModal(id) {
     editingGuildId = id;
     const guild = GUILD_CONFIG[id];
     document.getElementById("edit-name").value = guild.name;
     document.getElementById("edit-color").value = guild.color;
     
-    // 生成色票
+    // 渲染預設推薦色票
     const container = document.getElementById("swatch-container");
     container.innerHTML = "";
     
@@ -218,15 +295,12 @@ function openEditModal(id) {
         swatch.className = "swatch";
         swatch.style.backgroundColor = color;
         
-        // 如果目前顏色等於此色票，標記為選中
         if (guild.color.toUpperCase() === color.toUpperCase()) {
             swatch.classList.add("selected");
         }
 
         swatch.onclick = () => {
-            // 更新隱藏的顏色輸入框
             document.getElementById("edit-color").value = color;
-            // 更新色票選中視覺
             document.querySelectorAll(".swatch").forEach(s => s.classList.remove("selected"));
             swatch.classList.add("selected");
         };
@@ -236,30 +310,41 @@ function openEditModal(id) {
     document.getElementById("edit-modal").style.display = "flex";
 }
 
-// 初始化
+function closeModal() {
+    document.getElementById("edit-modal").style.display = "none";
+}
+
+function saveGuildEdit() {
+    const newName = document.getElementById("edit-name").value.trim() || GUILD_CONFIG[editingGuildId].name;
+    const newColor = document.getElementById("edit-color").value;
+
+    GUILD_CONFIG[editingGuildId].name = newName;
+    GUILD_CONFIG[editingGuildId].color = newColor;
+
+    // 更新地圖上此公會格子的顏色
+    if (typeof window.updateMapColors === 'function') {
+        window.updateMapColors(editingGuildId, newColor);
+    }
+
+    // 重新計算並刷新據點與最大勢力標籤
+    refreshAllLogic();
+    renderGuildSelectors();
+    closeModal();
+}
+
+// 初始化公會清單
 document.addEventListener("DOMContentLoaded", renderGuildSelectors);
 
 // --- 排行榜統計邏輯 ---
-
-
 function updateLeaderboard() {
     const panel = document.getElementById("leaderboard-panel");
-    if (panel.style.display === 'none') return;
+    if (!panel || panel.style.display === 'none') return;
 
     panel.innerHTML = "";
     
-    // 統計資料結構：
-    // stats[gId] = { 
-    //    validTotal: 0,      // 有效數量 (排序用)
-    //    maxPriority: 0,     // 最高權重 (排序用)
-    //    periodicScore: 0,   // 定給分總計
-    //    finalScore: 0,      // 結算分總計
-    //    items: { "設施名": { count: 0, priority: 0 } } 
-    // }
     const stats = {};
     const allHexes = document.querySelectorAll('.hex');
 
-    // 定義權重 (數字越大排越前)
     const getBasePriority = (type, level, name) => {
         if (name === "珍寶點") return 5;
         if (name === "沈船點") return 4;
@@ -286,7 +371,6 @@ function updateLeaderboard() {
             };
         }
 
-        // 取得名稱與等級
         let name = "";
         let level = 0;
         const q = parseInt(hex.dataset.q);
@@ -304,7 +388,6 @@ function updateLeaderboard() {
 
         if (!name) return;
 
-        // 判斷封鎖狀態
         const isBlocked = (hex.dataset.isBlocked === "true");
         let displayName = name;
         let itemPriority = getBasePriority(type, level, name);
@@ -313,38 +396,31 @@ function updateLeaderboard() {
             displayName = `${name}(被封鎖)`;
             itemPriority = -1; 
         } else {
-            // 有效設施：更新公會的統計數據
             stats[gId].validTotal++;
             if (itemPriority > stats[gId].maxPriority) {
                 stats[gId].maxPriority = itemPriority;
             }
-            // --- 累加分數 ---
             const rules = SCORE_RULES[name] || { periodic: 0, final: 0 };
             stats[gId].periodicScore += rules.periodic;
             stats[gId].finalScore += rules.final;
         }
 
-        // 統計該項目的數量 (分開統計 "水手酒館" 與 "水手酒館(被封鎖)")
         if (!stats[gId].items[displayName]) {
             stats[gId].items[displayName] = { count: 0, priority: itemPriority };
         }
         stats[gId].items[displayName].count++;
     });
 
-    // 2. 排序公會
     const sortedGuilds = Object.keys(stats)
         .map(id => parseInt(id))
         .filter(id => Object.keys(stats[id].items).length > 0)
         .sort((a, b) => {
-            // 先比有效設施的最高等級
             const pA = stats[a].maxPriority;
             const pB = stats[b].maxPriority;
             if (pA !== pB) return pB - pA; 
-            // 再比有效設施的總數
             return stats[b].validTotal - stats[a].validTotal;
         });
 
-    // 3. 渲染 DOM
     sortedGuilds.forEach(gId => {
         const guildData = GUILD_CONFIG[gId];
         const data = stats[gId];
@@ -353,7 +429,6 @@ function updateLeaderboard() {
         group.className = "lb-guild-group";
         group.style.borderLeftColor = guildData.color;
 
-        // 標題顯示：公會名稱 + (有效數量總計，可選)
         const header = document.createElement("div");
         header.className = "lb-header";
         header.innerHTML = `<span>${guildData.name}</span>`;
@@ -362,16 +437,12 @@ function updateLeaderboard() {
         const list = document.createElement("div");
         list.className = "lb-list";
 
-        // 4. 排序公會內部的設施列表
-        // 依據 priority 降冪 (正常設施在前，被封鎖的(-1)在後)
         const sortedItemNames = Object.keys(data.items).sort((nA, nB) => {
              const itemA = data.items[nA];
              const itemB = data.items[nB];
-             // 先比權重
              if (itemA.priority !== itemB.priority) {
                  return itemB.priority - itemA.priority;
              }
-             // 權重相同比數量 (多的在前)
              return itemB.count - itemA.count;
         });
 
@@ -380,7 +451,6 @@ function updateLeaderboard() {
             const itemRow = document.createElement("div");
             itemRow.className = "lb-item";
             
-            // 如果是被封鎖的項目，文字顏色變暗或變紅以示區別
             const nameStyle = itemData.priority === -1 ? "color: #ff6666;" : "";
 
             itemRow.innerHTML = `
@@ -391,7 +461,7 @@ function updateLeaderboard() {
         });
 
         group.appendChild(list);
-        //計分資訊
+
         if (data.periodicScore > 0 || data.finalScore > 0) {
             const footer = document.createElement("div");
             footer.className = "lb-footer";
@@ -408,4 +478,3 @@ function updateLeaderboard() {
         panel.innerHTML = "<div style='padding:20px; color:#666; text-align:center;'>尚無公會佔領設施</div>";
     }
 }
-

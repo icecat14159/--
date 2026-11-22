@@ -1,54 +1,65 @@
-body { /*網頁背景*/
+/* 全域與頁面背景 */
+body {
     background: #222;
-    margin: 0;          /* 消除預設外邊距 */
-    padding: 0;         /* 消除預設內邊距 */
-    width: 100vw;       /* 強制寬度與螢幕同寬 */
-    height: 100vh;      /* 強制高度與螢幕同高 */
-    overflow: hidden;   /* 溢位不出現捲動條 */
+    margin: 0;
+    padding: 0;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+    font-family: 'Segoe UI', 'Microsoft JhengHei', sans-serif;
 }
 
-#menu-toggle { /* 側邊欄開關按鈕樣式 */
-  position: absolute;
-  top: 15px;
-  right: 15px;
-  z-index: 200;
-  background: #444;
-  color: white;
-  border: none;
-  padding: 10px 15px;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 20px;
+/* 側邊欄開關按鈕樣式 */
+#menu-toggle {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    z-index: 200;
+    background: #444;
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 20px;
+    transition: background 0.2s;
+}
+#menu-toggle:hover {
+    background: #555;
 }
 
-#ui-sidebar { /* 側邊欄外容器樣式 */
-  position: fixed;
-  top: 0;
-  right: 0;
-  width: 280px;
-  height: 100vh;
-  background: rgba(30, 30, 30, 0.9);
-  z-index: 150; /* 圖層 */
-  transition: transform 0.3s ease; /* 平滑移動 */
-  box-shadow: 2px 0 10px rgba(0,0,0,0.5);
+/* 側邊欄外層容器 */
+#ui-sidebar {
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: 280px;
+    height: 100vh;
+    background: rgba(30, 30, 30, 0.92);
+    backdrop-filter: blur(5px);
+    z-index: 150;
+    transition: transform 0.3s ease;
+    box-shadow: -2px 0 10px rgba(0, 0, 0, 0.5);
 }
-#ui-sidebar.sidebar-closed { /* 側邊欄容器樣式-關閉 */
-  transform: translateX(100%); /* 向右移出以隱藏 */
-}
-
-#ui-panel { /* 側邊欄內容器樣式 */
-  padding: 70px 15px 20px 15px; /* 上下左右內邊距 */
-  height: calc(100% - 90px);
-  display: flex; /* flex排版 */
-  flex-direction: column;
+#ui-sidebar.sidebar-closed {
+    transform: translateX(100%);
 }
 
-#sidebar-tabs { /* 分頁按鈕容器樣式 */
+/* 側邊欄內層容器 */
+#ui-panel {
+    padding: 70px 15px 20px 15px;
+    height: calc(100% - 90px);
+    display: flex;
+    flex-direction: column;
+}
+
+/* 分頁切換按鈕容器 */
+#sidebar-tabs {
     display: flex;
     border-bottom: 1px solid #555;
     margin-bottom: 10px;
 }
-.tab-btn { /* 分頁按鈕樣式 */
+.tab-btn {
     flex: 1;
     background: transparent;
     border: none;
@@ -59,89 +70,162 @@ body { /*網頁背景*/
     transition: all 0.2s;
     border-bottom: 3px solid transparent;
 }
-.tab-btn:hover { /* 懸停時 */
+.tab-btn:hover {
     color: #fff;
-    background: rgba(255,255,255,0.05);
+    background: rgba(255, 255, 255, 0.05);
 }
-.tab-btn.active { /* 選擇時 */
+.tab-btn.active {
     color: #fff;
     border-bottom: 3px solid #007bff;
     font-weight: bold;
 }
 
-#tool-panel { /* 公會列表功能部分樣式 */
-    margin-top: 15px;
-    padding-top: 10px;
-    border-top: 1px solid #555;
+/* 工具面板樣式 */
+#tool-panel {
+    margin-top: 5px;
+    padding-top: 5px;
 }
 
+.tool-section {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 6px;
+    padding: 8px;
+    margin-bottom: 10px;
+}
+
+/* 快速/筆刷佔領開關與一鍵重置按鈕 */
 #quick-fill-toggle,
-#landmark-toggle { /*快速佔領及地標顯示按鈕 預設(關閉)樣式*/
+#landmark-toggle {
     padding: 8px 12px;
-    margin: 5px;
     background-color: #444;
     color: white;
     border: 1px solid #666;
     border-radius: 4px;
     cursor: pointer;
     transition: background-color 0.2s;
+    font-size: 13px;
 }
 #quick-fill-toggle:hover,
-#landmark-toggle:hover { /*快速佔領及地標顯示按鈕 關閉時懸停樣式*/
+#landmark-toggle:hover {
     background-color: #555;
 }
 #quick-fill-toggle.active, 
-#landmark-toggle.active { /*快速佔領及地標顯示按鈕 啟動樣式*/
+#landmark-toggle.active {
     background-color: #28a745;
     border-color: #ffffff;
 }
 #quick-fill-toggle.active:hover, 
-#landmark-toggle.active:hover { /*快速佔領及地標顯示按鈕 啟動時懸停樣式*/
+#landmark-toggle.active:hover {
     background-color: #218838;
 }
 
-#hexMap { /* 大地圖(背景板)樣式 */
+/* 項目 4：面板一鍵清除當前公會海域按鈕 */
+#reset-guild-btn {
+    padding: 8px 10px;
+    background-color: #632222;
+    color: #ffcccc;
+    border: 1px solid #8e3535;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 13px;
+    transition: all 0.2s;
+}
+#reset-guild-btn:hover {
+    background-color: #8c2a2a;
+    color: #ffffff;
+    border-color: #ff5555;
+}
+
+/* 項目 3：筆刷大小控制項 */
+.brush-size-buttons {
+    display: flex;
+    gap: 4px;
+    margin-top: 4px;
+}
+.brush-size-btn {
+    flex: 1;
+    background: #3a3a3a;
+    color: #ccc;
+    border: 1px solid #555;
+    border-radius: 4px;
+    padding: 4px 0;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+.brush-size-btn:hover {
+    background: #4a4a4a;
+    color: #fff;
+}
+.brush-size-btn.active {
+    background: #007bff;
+    color: #fff;
+    border-color: #fff;
+    font-weight: bold;
+}
+#brush-size-slider {
+    width: 100%;
+    margin-top: 6px;
+    accent-color: #007bff;
+    cursor: pointer;
+}
+
+/* 大地圖 SVG 畫布樣式 */
+#hexMap {
     background: #2f3b3f;
     width: 100vw;
     height: 100vh;
     display: block;
-    overflow: hidden; /* 溢位不出現捲動條 */
-    touch-action: none; /* 禁止瀏覽器處理觸控行為 */
+    overflow: hidden;
+    touch-action: none;
 }
 
-#hexMap:not(.hide-landmarks) .hex[data-type="facility"] { /* 設施醒目標示 */
-    fill: #ffd70090 !important; /* 強制覆蓋JS行內樣式 */
-    fill-opacity: 0.5; /* 透明度 */
+/* 地標醒目標示 */
+#hexMap:not(.hide-landmarks) .hex[data-type="facility"] {
+    fill: #ffd70090 !important;
+    fill-opacity: 0.5;
 }
-#hexMap:not(.hide-landmarks) .hex[data-type="buff"] { /* 人魚島醒目標示 */
+#hexMap:not(.hide-landmarks) .hex[data-type="buff"] {
     fill: #00ffff90 !important;
     fill-opacity: 0.5;
 }
 
-.hex { /*每個格子(公海)預設樣式*/
+/* 六角格預設樣式 */
+.hex {
     fill: #c2d7f54d;
     stroke: #1e2a2d80;
     stroke-width: 1;
     cursor: pointer;
+    transition: stroke 0.1s;
 }
-.hex[data-guild-id]:not([data-guild-id="0"]) { /* 所有不是公海(被佔領)的格子 */
-    fill-opacity: 0.3; /* 降透明度 */
+.hex[data-guild-id]:not([data-guild-id="0"]) {
+    fill-opacity: 0.3;
 }
-.hex:hover { /*懸停改色*/
+.hex:hover {
     fill: #89a3d8bb;
 }
 
-.hex-restricted-overlay { /* 禁區遮罩樣式 */
-    fill: url(#hatchPattern); /* 填滿斜線 */
-    pointer-events: none;     /* 允許滑鼠點擊穿透 */
+/* 項目 3：筆刷懸停預覽外框 */
+.hex.brush-hover {
+    stroke: #ffffff !important;
+    stroke-width: 2.5px !important;
+    filter: brightness(1.3);
+}
+
+/* 禁區遮罩樣式 */
+.hex-restricted-overlay {
+    fill: url(#hatchPattern);
+    pointer-events: none;
     stroke: #555;
     stroke-width: 2;
 }
-.hex[data-restricted="true"] { /* 禁區給予禁止回饋 */
+.hex[data-restricted="true"] {
     cursor: not-allowed;
 }
 
-.phase-btn { /* 地圖階段切換按鈕樣式 */
+/* 地圖階段切換按鈕 */
+.phase-btn {
     background: #444;
     color: white;
     border: 1px solid #666;
@@ -149,13 +233,16 @@ body { /*網頁背景*/
     padding: 4px 8px;
     margin: 2px;
     cursor: pointer;
+    font-size: 13px;
 }
-.phase-btn.active { /* 地圖階段按鈕選中樣式 */
+.phase-btn.active {
     background: #007bff;
     border-color: white;
+    font-weight: bold;
 }
 
-.marker-btn { /* 戰術標記按鈕通用樣式 */
+/* 戰術標記按鈕樣式 */
+.marker-btn {
     width: 30px;
     height: 30px;
     border: 2px solid #555;
@@ -167,103 +254,145 @@ body { /*網頁背景*/
     justify-content: center;
     transition: transform 0.1s;
 }
-.marker-btn:hover { /* 戰術標記按鈕懸停特效 */
+.marker-btn:hover {
     transform: scale(1.1);
 }
-.marker-btn.active { /* 戰術標記按鈕選中效果 */
+.marker-btn.active {
     border-color: white;
     box-shadow: 0 0 5px white;
 }
-.marker-btn.attack { background-color: #fd7e14; } /* 進攻 */
-.marker-btn.defend { background-color: #007bff; } /* 防守 */
-.marker-btn.ban    { background-color: #dc3545; } /* 禁止 */
-.marker-btn.warn   { background-color: #ffc107; } /* 注意 */
-.marker-btn.clear { background-color: #666; }    /* 清除 */
+.marker-btn.attack { background-color: #fd7e14; }
+.marker-btn.defend { background-color: #007bff; }
+.marker-btn.ban    { background-color: #dc3545; }
+.marker-btn.warn   { background-color: #ffc107; }
+.marker-btn.clear  { background-color: #666; }
 
-.map-marker-group { /* 地圖上的戰術標記(圖釘)樣式 */
+/* 戰術標記 (圖釘) */
+.map-marker-group {
     pointer-events: none;
-    filter: drop-shadow(1px 2px 2px rgba(0,0,0,0.5)); /* 陰影立體感 */
-    transition: filter 0.2s;
+    filter: drop-shadow(1px 2px 2px rgba(0, 0, 0, 0.5));
 }
-.map-marker-pin { /* 圖釘針頭 */
+.map-marker-pin {
     fill: #ffffff;
     stroke: #999999;
     stroke-width: 0.5px;
 }
-.map-marker-head { /* 圖釘圓頭 */
+.map-marker-head {
     stroke: white;
     stroke-width: 1.5px;
 }
-.map-marker-text { /* 圖釘內文字或圖示 */
+.map-marker-text {
     font-size: 11px;
     font-weight: bold;
     fill: white;
     text-anchor: middle;
     dominant-baseline: central;
 }
-.map-marker-icon { /* 圖釘內圖示 */
+.map-marker-icon {
     fill: white;
 }
 
-/* 整理至此 */
-/* 內容區域控制 */
+/* 分頁內容切換控制 */
 .tab-content {
-    display: none; /* 預設隱藏 */
+    display: none;
     flex-grow: 1;
     overflow-y: auto;
 }
 .tab-content.active {
-    display: flex; /* 公會列表原本是 flex */
+    display: flex;
 }
-
-#guild-selector {
-  flex-grow: 1;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-/* 自定義捲動條樣式（美化） */
 .tab-content::-webkit-scrollbar {
-  width: 6px;
+    width: 6px;
 }
 .tab-content::-webkit-scrollbar-thumb {
-  background: #555;
-  border-radius: 3px;
+    background: #555;
+    border-radius: 3px;
+}
+
+/* 公會清單容器與項目 */
+#guild-selector {
+    flex-grow: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 10px;
 }
 .guild-item {
-  display: flex;
-  align-items: center;
-  padding: 6px;
-  border-radius: 4px;
-  cursor: pointer;
-  background: rgba(255, 255, 255, 0.05);
-  border: 2px solid transparent;
-  transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    padding: 6px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    background: rgba(255, 255, 255, 0.05);
+    border: 2px solid transparent;
+    transition: all 0.2s;
+}
+.guild-item:hover {
+    background: rgba(255, 255, 255, 0.1);
 }
 .guild-item.active {
-  background: rgba(255, 255, 255, 0.15);
-  border-color: #fff;
-  box-shadow: 0 0 8px rgba(255, 255, 255, 0.3);
+    background: rgba(255, 255, 255, 0.16);
+    border-color: #fff;
+    box-shadow: 0 0 8px rgba(255, 255, 255, 0.3);
 }
 .guild-btn {
-  width: 20px;
-  height: 20px;
-  flex-shrink: 0;
-  border: 1px solid rgba(255, 255, 255, 0.5);
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    border-radius: 3px;
 }
 .guild-name-label {
-  flex-grow: 1;
-  margin-left: 10px;
-  font-size: 14px;
-  color: #eee;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+    flex-grow: 1;
+    margin-left: 10px;
+    font-size: 14px;
+    color: #eee;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
+
+/* 項目 4：公會行內的重置按鈕 */
+.reset-btn {
+    background: transparent;
+    border: none;
+    color: #ff6b6b;
+    border-radius: 3px;
+    padding: 2px 6px;
+    margin-right: 4px;
+    cursor: pointer;
+    font-size: 13px;
+    opacity: 0.65;
+    transition: all 0.15s ease;
+}
+.reset-btn:hover {
+    opacity: 1;
+    transform: scale(1.15);
+    color: #ff3333;
+}
+
+/* 公會編輯按鈕 */
+.edit-btn {
+    background: #555;
+    border: none;
+    color: white;
+    border-radius: 3px;
+    padding: 2px 6px;
+    cursor: pointer;
+    font-size: 12px;
+    opacity: 0.6;
+    transition: all 0.15s ease;
+}
+.edit-btn:hover {
+    opacity: 1;
+    background: #666;
+}
+
+/* 色票選擇器 */
 #swatch-container {
     display: grid;
-    grid-template-columns: repeat(5, 1fr); /* 5行4列 */
+    grid-template-columns: repeat(5, 1fr);
     gap: 8px;
     margin: 10px 0;
     padding: 10px;
@@ -279,57 +408,66 @@ body { /*網頁背景*/
     transition: transform 0.1s;
 }
 .swatch:hover {
-    transform: scale(1.2);
+    transform: scale(1.15);
     border-color: #fff;
 }
 .swatch.selected {
     border: 2px solid #fff;
-    box-shadow: 0 0 5px #fff;
-}
-.edit-btn {
-  background: #555;
-  border: none;
-  color: white;
-  border-radius: 3px;
-  padding: 2px 5px;
-  cursor: pointer;
-  font-size: 12px;
-  opacity: 0.6;
-}
-.edit-btn:hover {
-  opacity: 1;
-}
-/* 彈窗背景 */
-#edit-modal {
-  position: fixed;
-  top: 0; left: 0;
-  width: 100%; height: 100%;
-  background: rgba(0,0,0,0.7);
-  z-index: 1000;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-.modal-content {
-  background: #333;
-  padding: 20px;
-  border-radius: 10px;
-  border: 1px solid #555;
-  color: white;
-}
-/* 強化按鈕選取感 */
-.guild-btn.active {
-  border: 3px solid #fff;
-  transform: scale(1.1);
-  box-shadow: 0 0 10px rgba(255,255,255,0.5);
-}
-.guild-item {
-  display: inline-flex;
-  align-items: center;
-  margin-bottom: 5px;
+    box-shadow: 0 0 6px #fff;
 }
 
-/* 確保公會邊框持續顯示 (這是我們之前做的面狀邊緣) */
+/* 編輯公會彈窗 */
+#edit-modal {
+    position: fixed;
+    top: 0; 
+    left: 0;
+    width: 100%; 
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    z-index: 1000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+.modal-content {
+    background: #333;
+    padding: 22px;
+    border-radius: 10px;
+    border: 1px solid #555;
+    color: white;
+    min-width: 280px;
+    box-shadow: 0 5px 25px rgba(0, 0, 0, 0.7);
+}
+.modal-btn {
+    background: #555;
+    border: 1px solid #666;
+    color: white;
+    border-radius: 4px;
+    padding: 6px 12px;
+    cursor: pointer;
+    font-size: 13px;
+    transition: background 0.15s;
+}
+.modal-btn:hover {
+    background: #666;
+}
+.modal-btn.primary {
+    background: #007bff;
+    border-color: #007bff;
+}
+.modal-btn.primary:hover {
+    background: #0069d9;
+}
+.modal-btn.danger {
+    background: #dc3545;
+    border-color: #dc3545;
+    margin-right: auto;
+}
+.modal-btn.danger:hover {
+    background: #bd2130;
+}
+
+/* 公會領地邊界光暈 */
 .guild-outline {
     pointer-events: none;
     z-index: 10;
@@ -342,27 +480,25 @@ body { /*網頁背景*/
 /* 封鎖標誌樣式 */
 .hex-blocked-mark {
     fill: none;
-    stroke: rgba(255, 0, 0, 0.7); /* 半透明紅色 */
+    stroke: rgba(255, 0, 0, 0.7);
     stroke-width: 5;
     stroke-linecap: round;
     pointer-events: none;
-    display: none; /* 預設隱藏 */
+    display: none;
 }
 .hex.is-blocked {
     filter: brightness(1);
 }
-/* 障礙格維持透明，並顯示禁止符號提示 */
 .hex[data-type="obstacle"] {
     fill: transparent !important;
     stroke: transparent !important;
     cursor: not-allowed;
 }
-/* 確保滑鼠移上去也不會變色 */
 .hex[data-type="obstacle"]:hover {
     fill: transparent !important;
 }
 
-/* 提示箭頭基礎樣式 */
+/* 提示箭頭樣式 */
 .indicator-group {
     pointer-events: none;
     font-size: 14px;
@@ -375,37 +511,88 @@ body { /*網頁背景*/
     fill: #00ff00;
     filter: drop-shadow(0 0 2px #000);
 }
-
 .arrow-red {
     fill: #ff0000;
     filter: drop-shadow(0 0 2px #000);
 }
-/* 1. 告訴瀏覽器 viewport 會頻繁變換，請啟用硬體加速 */
+
+/* 硬體加速與互動流暢度 */
 #viewport {
     will-change: transform;
-    /* 確保變換中心點正確*/
-    transform-origin: 0 0; 
+    transform-origin: 0 0;
 }
 
-/*當地圖處於「互動中」狀態時關閉所有濾鏡與陰影 */
 .is-interacting .map-marker-group,
 .is-interacting .guild-outline,
 .is-interacting .arrow-green,
-.is-interacting .arrow-red{
-    filter: none !important; /* 移除模糊運算 */
+.is-interacting .arrow-red,
+.is-interacting .base-name-text,
+.is-interacting .guild-territory-text {
+    filter: none !important;
 }
 
-/* 排行榜專用顯示模式 */
+/* --- 項目 1：公會據點(船)名稱標籤 --- */
+.base-name-badge {
+    pointer-events: none;
+    user-select: none;
+}
+.base-name-text {
+    font-size: 11px;
+    font-weight: 800;
+    fill: #ffffff;
+    text-anchor: middle;
+    dominant-baseline: central;
+    paint-order: stroke fill;
+    stroke: #181d20;
+    stroke-width: 3.5px;
+    stroke-linejoin: round;
+    filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.9));
+}
+
+/* --- 項目 2：公會最大片佔領海域勢力標籤 --- */
+.guild-territory-group {
+    pointer-events: none;
+    user-select: none;
+}
+.guild-territory-text {
+    font-family: 'Microsoft JhengHei', 'Segoe UI', system-ui, sans-serif;
+    font-size: 15px;
+    font-weight: 900;
+    letter-spacing: 1.5px;
+    fill: #ffffff;
+    text-anchor: middle;
+    dominant-baseline: central;
+    paint-order: stroke fill;
+    stroke: #111820;
+    stroke-width: 4px;
+    stroke-linejoin: round;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.95));
+}
+.guild-territory-sub {
+    font-family: 'Microsoft JhengHei', 'Segoe UI', system-ui, sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    fill: #ffd966;
+    text-anchor: middle;
+    dominant-baseline: central;
+    paint-order: stroke fill;
+    stroke: #111820;
+    stroke-width: 2.5px;
+    stroke-linejoin: round;
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.8));
+}
+
+/* 排行榜樣式 */
 #leaderboard-panel.active {
     display: block; 
 }
-/* 排行榜單一公會區塊 */
 .lb-guild-group {
     margin-bottom: 15px;
     background: rgba(0, 0, 0, 0.2);
     border-radius: 4px;
     overflow: hidden;
-    border-left: 4px solid transparent; /* 左側用來顯示公會色 */
+    border-left: 4px solid transparent;
 }
 .lb-header {
     padding: 8px 10px;
@@ -428,7 +615,6 @@ body { /*網頁背景*/
     padding: 3px 0;
     border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
-
 .lb-item:last-child {
     border-bottom: none;
 }
@@ -440,7 +626,7 @@ body { /*網頁背景*/
     display: flex;
     justify-content: space-between;
     padding: 8px 10px;
-    background: rgba(0, 0, 0, 0.3); /* 比列表底色深一點 */
+    background: rgba(0, 0, 0, 0.3);
     border-top: 1px solid rgba(255, 255, 255, 0.1);
     font-size: 12px;
     color: #aaa;
@@ -452,12 +638,12 @@ body { /*網頁背景*/
     gap: 4px;
 }
 .score-p {
-    color: #4db8ff; /* 定給分用藍色系 */
+    color: #4db8ff;
     font-weight: bold;
     font-size: 13px;
 }
 .score-f {
-    color: #ffcc00; /* 結算分用金色系 */
+    color: #ffcc00;
     font-weight: bold;
     font-size: 13px;
 }
