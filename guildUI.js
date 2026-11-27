@@ -36,8 +36,9 @@ function switchTab(tabName) {
     } else {
         toolPanel.style.display = 'none';
         selector.style.display = 'none';
-        leaderboard.style.display = 'block';
-        updateLeaderboard(); // 切換時即時刷新統計
+        leaderboard.style.display = 'flex';
+        updateSimTimeUI();
+        updateLeaderboard(); // 切換時即時刷新統計與計分
     }
 }
 
@@ -335,12 +336,157 @@ function saveGuildEdit() {
 // 初始化公會清單
 document.addEventListener("DOMContentLoaded", renderGuildSelectors);
 
-// --- 排行榜統計邏輯 ---
+// --- 排行榜與計分系統整合邏輯 ---
+let currentTimeMinutes = 0; // 距離 19:00 的分鐘數 (0 = 19:00, 120 = 21:00)
+let simTimeMinutes = 0;     // 模擬進度拉條分鐘數 (currentTimeMinutes ~ 120)
+const guildBaseScores = {}; // 手動輸入的各公會目前已有分數 { guildId: number }
+
+function formatEventTime(minsFrom1900) {
+    const clamped = Math.max(0, Math.min(120, minsFrom1900));
+    const hour = 19 + Math.floor(clamped / 60);
+    const min = clamped % 60;
+    return `${hour}:${String(min).padStart(2, '0')}`;
+}
+
+function calculateGuildDynamicScore(baseScore, periodicScore, finalScore, startMins, targetMins) {
+    const ticks = Math.max(0, Math.floor(targetMins / 10) - Math.floor(startMins / 10));
+    const periodicGain = ticks * periodicScore;
+    const finalGain = (targetMins === 120 && startMins < 120) ? finalScore : 0;
+    return {
+        ticks,
+        periodicGain,
+        finalGain,
+        totalGain: periodicGain + finalGain,
+        totalScore: baseScore + periodicGain + finalGain
+    };
+}
+
+function onCurrentTimeChange() {
+    const hourEl = document.getElementById("current-hour");
+    const minEl = document.getElementById("current-minute");
+    if (!hourEl || !minEl) return;
+
+    let hour = parseInt(hourEl.value) || 19;
+    let min = parseInt(minEl.value);
+    if (isNaN(min) || min < 0) min = 0;
+    if (min > 59) min = 59;
+
+    if (hour >= 21) {
+        hour = 21;
+        min = 0;
+        minEl.value = "00";
+        minEl.disabled = true;
+    } else {
+        minEl.disabled = false;
+        minEl.value = String(min).padStart(2, '0');
+    }
+
+    currentTimeMinutes = Math.max(0, Math.min(120, (hour - 19) * 60 + min));
+
+    const slider = document.getElementById("sim-time-slider");
+    if (slider) {
+        slider.min = currentTimeMinutes;
+        if (simTimeMinutes < currentTimeMinutes) {
+            simTimeMinutes = currentTimeMinutes;
+        }
+        slider.value = simTimeMinutes;
+    }
+
+    updateSimTimeUI();
+    updateLeaderboard();
+}
+
+function onSimTimeSliderInput(val) {
+    simTimeMinutes = Math.max(currentTimeMinutes, Math.min(120, parseInt(val) || 0));
+    updateSimTimeUI();
+    updateLeaderboard();
+}
+
+function jumpSimTime(targetMins) {
+    simTimeMinutes = Math.max(currentTimeMinutes, Math.min(120, targetMins));
+    const slider = document.getElementById("sim-time-slider");
+    if (slider) slider.value = simTimeMinutes;
+    updateSimTimeUI();
+    updateLeaderboard();
+}
+
+function updateSimTimeUI() {
+    const timeDisplay = document.getElementById("sim-time-display");
+    const ticksDisplay = document.getElementById("sim-ticks-display");
+    if (timeDisplay) {
+        timeDisplay.innerText = formatEventTime(simTimeMinutes);
+    }
+    if (ticksDisplay) {
+        const ticks = Math.max(0, Math.floor(simTimeMinutes / 10) - Math.floor(currentTimeMinutes / 10));
+        const hasFinal = (simTimeMinutes === 120 && currentTimeMinutes < 120);
+        ticksDisplay.innerText = hasFinal ? `+${ticks}次定給 + 結算分` : `+${ticks} 次定給分`;
+        ticksDisplay.classList.toggle("has-final", hasFinal);
+    }
+}
+
+function updateManualGuildSelect() {
+    const select = document.getElementById("manual-guild-select");
+    if (!select) return;
+    const prevVal = select.value;
+    select.innerHTML = "";
+    for (let gId = 1; gId <= 16; gId++) {
+        const opt = document.createElement("option");
+        opt.value = gId;
+        opt.innerText = GUILD_CONFIG[gId].name;
+        select.appendChild(opt);
+    }
+    if (prevVal && parseInt(prevVal) >= 1 && parseInt(prevVal) <= 16) {
+        select.value = prevVal;
+    }
+}
+
+function addManualGuildScore() {
+    const select = document.getElementById("manual-guild-select");
+    const input = document.getElementById("manual-guild-score");
+    if (!select || !input) return;
+
+    const gId = parseInt(select.value);
+    const val = Math.max(0, parseInt(input.value) || 0);
+    guildBaseScores[gId] = val;
+    input.value = "";
+    updateLeaderboard();
+}
+
+function updateGuildBaseScore(gId, rawVal, shouldResort) {
+    const val = Math.max(0, parseInt(rawVal) || 0);
+    guildBaseScores[gId] = val;
+
+    if (shouldResort) {
+        updateLeaderboard();
+        return;
+    }
+
+    // 即時更新該卡片數值，避免打字時失去焦點
+    const card = document.querySelector(`.lb-guild-group[data-guild-id="${gId}"]`);
+    if (!card) return;
+
+    const periodicScore = parseInt(card.dataset.periodic || 0);
+    const finalScore = parseInt(card.dataset.final || 0);
+
+    const simRes = calculateGuildDynamicScore(val, periodicScore, finalScore, currentTimeMinutes, simTimeMinutes);
+    const estRes = calculateGuildDynamicScore(val, periodicScore, finalScore, currentTimeMinutes, 120);
+
+    const totalEl = card.querySelector(".lb-dynamic-total");
+    const gainEl = card.querySelector(".lb-sim-gain");
+    const estEl = card.querySelector(".lb-est-final");
+
+    if (totalEl) totalEl.innerText = `${simRes.totalScore.toLocaleString()} 分`;
+    if (gainEl) gainEl.innerText = `+${simRes.totalGain.toLocaleString()}`;
+    if (estEl) estEl.innerText = estRes.totalScore.toLocaleString();
+}
+
 function updateLeaderboard() {
     const panel = document.getElementById("leaderboard-panel");
-    if (!panel || panel.style.display === 'none') return;
+    const listContainer = document.getElementById("leaderboard-list");
+    if (!panel || !listContainer || panel.style.display === 'none') return;
 
-    panel.innerHTML = "";
+    updateManualGuildSelect();
+    listContainer.innerHTML = "";
     
     const stats = {};
     const allHexes = document.querySelectorAll('.hex');
@@ -411,28 +557,72 @@ function updateLeaderboard() {
         stats[gId].items[displayName].count++;
     });
 
+    // 將有手動輸入已有分數但目前沒有佔領設施的公會也納入顯示
+    Object.keys(guildBaseScores).forEach(idStr => {
+        const gId = parseInt(idStr);
+        if (guildBaseScores[gId] > 0 && !stats[gId]) {
+            stats[gId] = {
+                validTotal: 0,
+                maxPriority: 0,
+                periodicScore: 0,
+                finalScore: 0,
+                items: {}
+            };
+        }
+    });
+
+    // 預先計算各公會的模擬總分與 21:00 預估總分
+    Object.keys(stats).forEach(idStr => {
+        const gId = parseInt(idStr);
+        const base = guildBaseScores[gId] || 0;
+        const data = stats[gId];
+        data.baseScore = base;
+        data.simResult = calculateGuildDynamicScore(base, data.periodicScore, data.finalScore, currentTimeMinutes, simTimeMinutes);
+        data.estResult = calculateGuildDynamicScore(base, data.periodicScore, data.finalScore, currentTimeMinutes, 120);
+    });
+
     const sortedGuilds = Object.keys(stats)
         .map(id => parseInt(id))
-        .filter(id => Object.keys(stats[id].items).length > 0)
+        .filter(id => Object.keys(stats[id].items).length > 0 || stats[id].baseScore > 0)
         .sort((a, b) => {
-            const pA = stats[a].maxPriority;
-            const pB = stats[b].maxPriority;
-            if (pA !== pB) return pB - pA; 
+            const simDiff = stats[b].simResult.totalScore - stats[a].simResult.totalScore;
+            if (simDiff !== 0) return simDiff;
+            const estDiff = stats[b].estResult.totalScore - stats[a].estResult.totalScore;
+            if (estDiff !== 0) return estDiff;
+            const pDiff = stats[b].maxPriority - stats[a].maxPriority;
+            if (pDiff !== 0) return pDiff;
             return stats[b].validTotal - stats[a].validTotal;
         });
 
-    sortedGuilds.forEach(gId => {
+    sortedGuilds.forEach((gId, index) => {
         const guildData = GUILD_CONFIG[gId];
         const data = stats[gId];
 
         const group = document.createElement("div");
         group.className = "lb-guild-group";
+        group.dataset.guildId = gId;
+        group.dataset.periodic = data.periodicScore;
+        group.dataset.final = data.finalScore;
         group.style.borderLeftColor = guildData.color;
 
         const header = document.createElement("div");
         header.className = "lb-header";
-        header.innerHTML = `<span>${guildData.name}</span>`;
+        header.innerHTML = `
+            <span>#${index + 1} ${guildData.name}</span>
+            <span class="lb-dynamic-total">${data.simResult.totalScore.toLocaleString()} 分</span>
+        `;
         group.appendChild(header);
+
+        // 目前已有分數輸入列
+        const baseRow = document.createElement("div");
+        baseRow.className = "lb-base-score-row";
+        baseRow.innerHTML = `
+            <span>目前已有分數：</span>
+            <input type="number" min="0" step="100" class="guild-base-score-input" value="${data.baseScore}"
+                oninput="updateGuildBaseScore(${gId}, this.value, false)"
+                onchange="updateGuildBaseScore(${gId}, this.value, true)">
+        `;
+        group.appendChild(baseRow);
 
         const list = document.createElement("div");
         list.className = "lb-list";
@@ -446,35 +636,44 @@ function updateLeaderboard() {
              return itemB.count - itemA.count;
         });
 
-        sortedItemNames.forEach(itemName => {
-            const itemData = data.items[itemName];
-            const itemRow = document.createElement("div");
-            itemRow.className = "lb-item";
-            
-            const nameStyle = itemData.priority === -1 ? "color: #ff6666;" : "";
+        if (sortedItemNames.length === 0) {
+            const emptyRow = document.createElement("div");
+            emptyRow.className = "lb-item";
+            emptyRow.style.color = "#777";
+            emptyRow.innerText = "尚無佔領設施";
+            list.appendChild(emptyRow);
+        } else {
+            sortedItemNames.forEach(itemName => {
+                const itemData = data.items[itemName];
+                const itemRow = document.createElement("div");
+                itemRow.className = "lb-item";
+                
+                const nameStyle = itemData.priority === -1 ? "color: #ff6666;" : "";
 
-            itemRow.innerHTML = `
-                <span style="${nameStyle}">${itemName}</span>
-                <span class="lb-count">${itemData.count}</span>
-            `;
-            list.appendChild(itemRow);
-        });
+                itemRow.innerHTML = `
+                    <span style="${nameStyle}">${itemName}</span>
+                    <span class="lb-count">${itemData.count}</span>
+                `;
+                list.appendChild(itemRow);
+            });
+        }
 
         group.appendChild(list);
 
-        if (data.periodicScore > 0 || data.finalScore > 0) {
-            const footer = document.createElement("div");
-            footer.className = "lb-footer";
-            footer.innerHTML = `
-                <div>定給分 <span class="score-p">+${data.periodicScore}</span>/10 min</div>
-                <div>結算分 <span class="score-f">+${data.finalScore}</span></div>
-            `;
-            group.appendChild(footer);
-        }
-        panel.appendChild(group);
+        const footer = document.createElement("div");
+        footer.className = "lb-footer lb-footer-grid";
+        footer.innerHTML = `
+            <div>定給分 <span class="score-p">+${data.periodicScore}</span>/10分</div>
+            <div>結算分 <span class="score-f">+${data.finalScore}</span></div>
+            <div>模擬增量 <span class="score-p lb-sim-gain">+${data.simResult.totalGain.toLocaleString()}</span></div>
+            <div>21:00預估 <span class="score-f lb-est-final">${data.estResult.totalScore.toLocaleString()}</span></div>
+        `;
+        group.appendChild(footer);
+
+        listContainer.appendChild(group);
     });
 
     if (sortedGuilds.length === 0) {
-        panel.innerHTML = "<div style='padding:20px; color:#666; text-align:center;'>尚無公會佔領設施</div>";
+        listContainer.innerHTML = "<div style='padding:20px; color:#666; text-align:center;'>尚無公會佔領設施或分數資料</div>";
     }
 }

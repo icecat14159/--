@@ -87,8 +87,48 @@
         <!-- 公會清單列表 -->
         <div id="guild-selector" class="tab-content active"></div>
 
-        <!-- 設施統計面板 -->
-        <div id="leaderboard-panel" class="tab-content"></div>
+        <!-- 設施統計與計分系統面板 -->
+        <div id="leaderboard-panel" class="tab-content">
+          <div id="scoring-control-panel">
+            <div class="scoring-row">
+              <span class="scoring-label">現在時間：</span>
+              <div class="time-picker-group">
+                <select id="current-hour" onchange="onCurrentTimeChange()">
+                  <option value="19" selected>19</option>
+                  <option value="20">20</option>
+                  <option value="21">21</option>
+                </select>
+                <span>:</span>
+                <input type="number" id="current-minute" min="0" max="59" value="00" onchange="onCurrentTimeChange()" oninput="onCurrentTimeChange()">
+              </div>
+              <span class="scoring-hint">(19:00-21:00)</span>
+            </div>
+
+            <div class="scoring-slider-box">
+              <div class="scoring-slider-header">
+                <span>模擬時間：<strong id="sim-time-display">19:00</strong></span>
+                <span id="sim-ticks-display" class="sim-ticks-badge">+0 次定給分</span>
+              </div>
+              <input type="range" id="sim-time-slider" min="0" max="120" value="0" step="1" oninput="onSimTimeSliderInput(this.value)">
+              <div class="sim-quick-btns">
+                <button type="button" onclick="jumpSimTime(currentTimeMinutes)">現在</button>
+                <button type="button" onclick="jumpSimTime(simTimeMinutes + 10)">+10分</button>
+                <button type="button" onclick="jumpSimTime(simTimeMinutes + 30)">+30分</button>
+                <button type="button" onclick="jumpSimTime(120)">21:00結算</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- 公會統計與計分列表 -->
+          <div id="leaderboard-list"></div>
+
+          <!-- 手動新增未佔領設施公會分數 -->
+          <div id="add-guild-score-box">
+            <select id="manual-guild-select"></select>
+            <input type="number" id="manual-guild-score" min="0" step="100" placeholder="已有分數">
+            <button type="button" onclick="addManualGuildScore()">設定</button>
+          </div>
+        </div>
       </div>
     </div>
 

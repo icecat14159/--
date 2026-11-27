@@ -583,13 +583,172 @@ body {
     filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.8));
 }
 
-/* 排行榜樣式 */
-#leaderboard-panel.active {
-    display: block; 
+/* 排行榜與計分系統樣式 */
+#leaderboard-panel {
+    flex-direction: column;
+    overflow: hidden;
 }
+#leaderboard-panel.active {
+    display: flex;
+}
+
+#scoring-control-panel {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 6px;
+    padding: 10px;
+    margin-bottom: 10px;
+    flex-shrink: 0;
+}
+
+.scoring-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 10px;
+}
+.scoring-label {
+    color: #ddd;
+    font-size: 13px;
+    font-weight: bold;
+}
+.time-picker-group {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    color: #fff;
+}
+.time-picker-group select,
+.time-picker-group input {
+    background: #333;
+    color: #fff;
+    border: 1px solid #555;
+    border-radius: 4px;
+    padding: 3px 5px;
+    font-size: 13px;
+}
+.time-picker-group input {
+    width: 40px;
+    text-align: center;
+}
+.scoring-hint {
+    color: #888;
+    font-size: 11px;
+    margin-left: auto;
+}
+
+.scoring-slider-box {
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    padding-top: 8px;
+}
+.scoring-slider-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: #ccc;
+    font-size: 13px;
+    margin-bottom: 4px;
+}
+.scoring-slider-header strong {
+    color: #4db8ff;
+    font-size: 15px;
+}
+.sim-ticks-badge {
+    font-size: 11px;
+    background: rgba(77, 184, 255, 0.15);
+    color: #4db8ff;
+    padding: 2px 6px;
+    border-radius: 10px;
+    border: 1px solid rgba(77, 184, 255, 0.3);
+}
+.sim-ticks-badge.has-final {
+    background: rgba(255, 204, 0, 0.15);
+    color: #ffcc00;
+    border-color: rgba(255, 204, 0, 0.4);
+}
+#sim-time-slider {
+    width: 100%;
+    accent-color: #007bff;
+    cursor: pointer;
+    margin: 4px 0;
+}
+.sim-quick-btns {
+    display: flex;
+    gap: 4px;
+    margin-top: 4px;
+}
+.sim-quick-btns button {
+    flex: 1;
+    background: #3a3a3a;
+    color: #ddd;
+    border: 1px solid #555;
+    border-radius: 3px;
+    padding: 3px 0;
+    font-size: 11px;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+.sim-quick-btns button:hover {
+    background: #4e4e4e;
+    color: #fff;
+}
+
+#leaderboard-list {
+    flex-grow: 1;
+    overflow-y: auto;
+    padding-right: 2px;
+}
+#leaderboard-list::-webkit-scrollbar {
+    width: 6px;
+}
+#leaderboard-list::-webkit-scrollbar-thumb {
+    background: #555;
+    border-radius: 3px;
+}
+
+#add-guild-score-box {
+    display: flex;
+    gap: 5px;
+    padding-top: 8px;
+    margin-top: 8px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    flex-shrink: 0;
+}
+#add-guild-score-box select {
+    flex: 1;
+    background: #333;
+    color: #fff;
+    border: 1px solid #555;
+    border-radius: 4px;
+    padding: 4px;
+    font-size: 12px;
+    min-width: 0;
+}
+#add-guild-score-box input {
+    width: 75px;
+    background: #333;
+    color: #fff;
+    border: 1px solid #555;
+    border-radius: 4px;
+    padding: 4px 6px;
+    font-size: 12px;
+}
+#add-guild-score-box button {
+    background: #007bff;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    padding: 4px 10px;
+    font-size: 12px;
+    cursor: pointer;
+}
+#add-guild-score-box button:hover {
+    background: #0069d9;
+}
+
 .lb-guild-group {
-    margin-bottom: 15px;
-    background: rgba(0, 0, 0, 0.2);
+    margin-bottom: 12px;
+    background: rgba(0, 0, 0, 0.25);
     border-radius: 4px;
     overflow: hidden;
     border-left: 4px solid transparent;
@@ -599,10 +758,39 @@ body {
     background: rgba(255, 255, 255, 0.1);
     color: #fff;
     font-weight: bold;
-    font-size: 15px;
+    font-size: 14px;
     display: flex;
     align-items: center;
     justify-content: space-between;
+}
+.lb-dynamic-total {
+    color: #ffcc00;
+    font-size: 15px;
+    font-weight: 800;
+}
+.lb-base-score-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 5px 10px;
+    background: rgba(0, 0, 0, 0.15);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    font-size: 12px;
+    color: #bbb;
+}
+.guild-base-score-input {
+    width: 85px;
+    background: #2a2a2a;
+    color: #fff;
+    border: 1px solid #555;
+    border-radius: 3px;
+    padding: 2px 6px;
+    font-size: 12px;
+    text-align: right;
+}
+.guild-base-score-input:focus {
+    outline: none;
+    border-color: #4db8ff;
 }
 .lb-list {
     padding: 5px 10px;
@@ -632,6 +820,11 @@ body {
     color: #aaa;
     white-space: nowrap;
 }
+.lb-footer-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4px 8px;
+}
 .lb-footer div {
     display: flex;
     align-items: center;
@@ -640,10 +833,10 @@ body {
 .score-p {
     color: #4db8ff;
     font-weight: bold;
-    font-size: 13px;
+    font-size: 12px;
 }
 .score-f {
     color: #ffcc00;
     font-weight: bold;
-    font-size: 13px;
+    font-size: 12px;
 }
