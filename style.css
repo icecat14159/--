@@ -9,7 +9,26 @@ body {
     font-family: 'Segoe UI', 'Microsoft JhengHei', sans-serif;
 }
 
-/* 側邊欄開關按鈕樣式 */
+/* 右上角教學引導與側邊欄開關按鈕 */
+#tour-trigger-btn {
+    position: absolute;
+    top: 15px;
+    right: 65px;
+    z-index: 200;
+    background: #3a4a5a;
+    color: #fff;
+    border: 1px solid #5a7a9a;
+    padding: 10px 14px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 18px;
+    font-weight: bold;
+    transition: background 0.2s;
+}
+#tour-trigger-btn:hover {
+    background: #4b6178;
+}
+
 #menu-toggle {
     position: absolute;
     top: 15px;
@@ -839,4 +858,158 @@ body {
     color: #ffcc00;
     font-weight: bold;
     font-size: 12px;
+}
+
+/* --- 觀察模式 vs 佔領模式切換器 --- */
+.mode-switcher {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 6px;
+}
+.mode-btn {
+    flex: 1;
+    padding: 7px 6px;
+    background: #333;
+    color: #bbb;
+    border: 1px solid #555;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: bold;
+    transition: all 0.15s;
+}
+.mode-btn:hover {
+    background: #444;
+    color: #fff;
+}
+#mode-observe-btn.active {
+    background: #17a2b8;
+    border-color: #fff;
+    color: #fff;
+    box-shadow: 0 0 8px rgba(23, 162, 184, 0.45);
+}
+#mode-occupy-btn.active {
+    background: #28a745;
+    border-color: #fff;
+    color: #fff;
+    box-shadow: 0 0 8px rgba(40, 167, 69, 0.45);
+}
+
+#unified-action-status {
+    font-size: 12px;
+    padding: 4px 8px;
+    border-radius: 4px;
+    margin-bottom: 8px;
+    text-align: center;
+    font-weight: bold;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+#unified-action-status.status-observe {
+    color: #6ce5f7;
+    border-color: rgba(23, 162, 184, 0.4);
+}
+#unified-action-status.status-occupy {
+    color: #80f099;
+    border-color: rgba(40, 167, 69, 0.4);
+}
+#unified-action-status.status-marker {
+    color: #ffd966;
+    border-color: rgba(255, 193, 7, 0.4);
+}
+
+/* --- 新手引導教學模式 --- */
+#tour-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.55);
+    z-index: 2000;
+}
+#tour-spotlight {
+    position: fixed;
+    border: 2px solid #4db8ff;
+    border-radius: 8px;
+    box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.45), 0 0 18px rgba(77, 184, 255, 0.8);
+    pointer-events: none;
+    transition: all 0.25s ease;
+    z-index: 2001;
+}
+#tour-card {
+    position: fixed;
+    width: 340px;
+    max-width: calc(100vw - 40px);
+    background: #252b32;
+    color: #f0f0f0;
+    border: 1px solid #4db8ff;
+    border-radius: 10px;
+    padding: 16px 18px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
+    z-index: 2002;
+    transition: top 0.25s ease, left 0.25s ease;
+}
+.tour-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+#tour-step-badge {
+    font-size: 12px;
+    color: #4db8ff;
+    font-weight: bold;
+    background: rgba(77, 184, 255, 0.15);
+    padding: 2px 8px;
+    border-radius: 10px;
+}
+.tour-skip-btn {
+    background: transparent;
+    border: none;
+    color: #aaa;
+    font-size: 12px;
+    cursor: pointer;
+    text-decoration: underline;
+}
+.tour-skip-btn:hover {
+    color: #fff;
+}
+#tour-title {
+    margin: 0 0 8px 0;
+    font-size: 16px;
+    color: #ffffff;
+}
+#tour-desc {
+    margin: 0 0 14px 0;
+    font-size: 13px;
+    line-height: 1.55;
+    color: #d0d7de;
+    white-space: pre-line;
+}
+.tour-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+}
+.tour-nav-btn {
+    background: #444;
+    color: #fff;
+    border: 1px solid #666;
+    border-radius: 5px;
+    padding: 6px 14px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+.tour-nav-btn:hover {
+    background: #555;
+}
+.tour-nav-btn.primary {
+    background: #007bff;
+    border-color: #007bff;
+    font-weight: bold;
+}
+.tour-nav-btn.primary:hover {
+    background: #0069d9;
 }

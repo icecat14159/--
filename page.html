@@ -6,7 +6,8 @@
     <link rel="stylesheet" href="style.css"> <!-- 導入樣式表 -->
   </head>
   <body>
-    <!-- 側邊欄開關按鈕 -->
+    <!-- 右上角功能按鈕：教學引導與側邊欄開關 -->
+    <button id="tour-trigger-btn" onclick="startTour(true)" title="開啟操作引導教學">?</button>
     <button id="menu-toggle" onclick="toggleSidebar()">✕</button>
 
     <!-- 側邊欄外層容器 -->
@@ -20,10 +21,17 @@
 
         <!-- 公會列表與操作面板 -->
         <div id="tool-panel"> 
-          <!-- 筆刷佔領設定區 -->
-          <div class="tool-section">
+          <!-- 模式切換：觀察模式 vs 佔領模式 -->
+          <div id="mode-switcher" class="mode-switcher">
+            <button id="mode-observe-btn" class="mode-btn" onclick="setInteractionMode('observe')" title="僅瀏覽與拖曳地圖，不觸發佔領或標記">👁 觀察模式</button>
+            <button id="mode-occupy-btn" class="mode-btn active" onclick="setInteractionMode('occupy')" title="點擊地圖進行公會佔領或放置標記">⚔ 佔領模式</button>
+          </div>
+          <div id="unified-action-status">目前操作：公海 佔領</div>
+
+          <!-- 筆刷與快速佔領設定區 -->
+          <div id="brush-section" class="tool-section">
             <div style="display: flex; gap: 6px; align-items: center;">
-              <button id="quick-fill-toggle" onclick="toggleQuickFill()">筆刷佔領：OFF</button>
+              <button id="quick-fill-toggle" onclick="toggleQuickFill()" title="開啟後按住左鍵拖曳即可連續佔領">快速佔領：OFF</button>
               <button id="reset-guild-btn" onclick="clearCurrentGuildTerritory()" title="一鍵清除目前選中公會的所有佔領海域">清除海域</button>
             </div>
             
@@ -41,15 +49,13 @@
             </div>
           </div>
 
-          <!-- 地標顯示控制 -->
-          <div style="margin-top: 10px;">
-            <button id="landmark-toggle" onclick="toggleLandmarks()">隱藏地標：OFF</button>
-          </div>
-
-          <!-- 地圖開放階段 -->
-          <div style="margin-top: 10px; border-top: 1px solid #555; padding-top: 8px;">
-            <span style="color: white; font-size: 14px;">地圖階段：</span><br>
-            <div style="margin-top: 5px;">
+          <!-- 地圖開放階段與地標顯示 -->
+          <div id="phase-section" style="margin-top: 8px; border-top: 1px solid #555; padding-top: 8px;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span style="color: white; font-size: 13px;">地圖階段：</span>
+              <button id="landmark-toggle" onclick="toggleLandmarks()">隱藏地標：OFF</button>
+            </div>
+            <div style="margin-top: 6px; display: flex; gap: 4px;">
               <button class="phase-btn active" onclick="setPhase(1)">第一天</button>
               <button class="phase-btn" onclick="setPhase(2)">第二天</button>
               <button class="phase-btn" onclick="setPhase(3)">第三天</button>
@@ -57,8 +63,8 @@
           </div>
 
           <!-- 戰術標記功能 -->
-          <div style="margin-top: 10px; border-top: 1px solid #555; padding-top: 8px;">
-            <span style="color: white; font-size: 14px;">戰術標記：</span><br>
+          <div id="marker-section" style="margin-top: 8px; border-top: 1px solid #555; padding-top: 8px;">
+            <span style="color: white; font-size: 13px;">戰術標記（與佔領共用切換）：</span><br>
             
             <div style="display: flex; gap: 5px; margin-top: 5px;">
               <button class="marker-btn attack" onclick="selectMarkerTool('attack')" title="進攻">
@@ -80,7 +86,6 @@
               <span style="color: #ccc; font-size: 12px; margin-right: 5px;">數值(億):</span>
               <input type="number" id="marker-value" placeholder="選填" oninput="updateMarkerValue(this.value)" style="width: 60px; background: #333; color: white; border: 1px solid #555; border-radius: 3px; padding: 2px 4px;">
             </div>
-            <div id="marker-status" style="color: #aaa; font-size: 12px; margin-top: 4px;">目前模式：無</div>
           </div>
         </div>
 
@@ -167,6 +172,23 @@
         <g id="mark-layer"></g> <!-- 戰術標記圖層 -->
       </g>
     </svg>
+
+    <!-- 新手引導教學遮罩與卡片 -->
+    <div id="tour-overlay" style="display: none;">
+      <div id="tour-spotlight"></div>
+      <div id="tour-card">
+        <div class="tour-header">
+          <span id="tour-step-badge">步驟 1 / 7</span>
+          <button type="button" class="tour-skip-btn" onclick="skipTour()">跳過引導</button>
+        </div>
+        <h3 id="tour-title">歡迎使用海盜棋模擬網站</h3>
+        <p id="tour-desc"></p>
+        <div class="tour-footer">
+          <button type="button" id="tour-prev-btn" class="tour-nav-btn" onclick="prevTourStep()">上一步</button>
+          <button type="button" id="tour-next-btn" class="tour-nav-btn primary" onclick="nextTourStep()">下一步</button>
+        </div>
+      </div>
+    </div>
 
     <!-- 腳本引入 -->
     <script src="config.js"></script>

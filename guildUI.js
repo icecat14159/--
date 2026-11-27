@@ -42,9 +42,64 @@ function switchTab(tabName) {
     }
 }
 
-// --- 項目 3：快速佔領改進（筆刷功能與大小調節） ---
-let isQuickFillActive = false; // 是否啟用筆刷佔領
-let currentBrushSize = 1;      // 筆刷大小 (1: 1格, 2: 7格, 3: 19格, 4: 37格)
+// --- 操作模式與共用選擇狀態 (觀察模式 vs 佔領模式) ---
+let interactionMode = 'occupy'; // 'observe' | 'occupy'
+let isQuickFillActive = false;  // 是否啟用快速佔領 (按住左鍵拖曳連續塗抹)
+let currentBrushSize = 1;       // 筆刷大小 (1: 1格, 2: 7格, 3: 19格, 4: 37格)
+
+function getInteractionMode() {
+    return interactionMode;
+}
+
+function setInteractionMode(mode) {
+    interactionMode = (mode === 'observe') ? 'observe' : 'occupy';
+
+    const observeBtn = document.getElementById("mode-observe-btn");
+    const occupyBtn = document.getElementById("mode-occupy-btn");
+    if (observeBtn) observeBtn.classList.toggle("active", interactionMode === 'observe');
+    if (occupyBtn) occupyBtn.classList.toggle("active", interactionMode === 'occupy');
+
+    if (interactionMode === 'observe' && typeof clearBrushHover === 'function') {
+        clearBrushHover();
+    }
+
+    updateMapCursor();
+    updateActionStatusUI();
+}
+
+function updateMapCursor() {
+    const map = document.getElementById("hexMap");
+    if (!map) return;
+    if (interactionMode === 'observe') {
+        map.style.cursor = "grab";
+    } else if (isQuickFillActive && !currentMarkerTool) {
+        map.style.cursor = "crosshair";
+    } else {
+        map.style.cursor = "default";
+    }
+}
+
+function updateActionStatusUI() {
+    const statusEl = document.getElementById("unified-action-status");
+    if (!statusEl) return;
+
+    if (interactionMode === 'observe') {
+        statusEl.innerText = "目前模式：觀察模式 (拖曳瀏覽)";
+        statusEl.className = "status-observe";
+        return;
+    }
+
+    if (currentMarkerTool) {
+        const names = { attack: "進攻標記", defend: "防守標記", ban: "禁止標記", warn: "注意標記", clear: "清除標記" };
+        statusEl.innerText = `目前操作：${names[currentMarkerTool]}`;
+        statusEl.className = "status-marker";
+    } else {
+        const guildName = GUILD_CONFIG[currentGuildId] ? GUILD_CONFIG[currentGuildId].name : "公海";
+        const modeText = isQuickFillActive ? "快速佔領" : "點擊佔領";
+        statusEl.innerText = `目前操作：${guildName} (${modeText})`;
+        statusEl.className = "status-occupy";
+    }
+}
 
 function getQuickFillStatus() {
     return isQuickFillActive;
@@ -54,24 +109,27 @@ function getBrushSize() {
     return currentBrushSize;
 }
 
-// 切換筆刷佔領狀態
+// 切換快速佔領狀態 (拖曳連續塗抹)
 function toggleQuickFill() {
     isQuickFillActive = !isQuickFillActive;
     const btn = document.getElementById("quick-fill-toggle");
     if (btn) {
-        btn.innerText = `筆刷佔領：${isQuickFillActive ? "ON" : "OFF"}`;
+        btn.innerText = `快速佔領：${isQuickFillActive ? "ON" : "OFF"}`;
         btn.classList.toggle("active", isQuickFillActive);
     }
-    
-    // 地圖指標變化
-    const map = document.getElementById("hexMap");
-    if (map) {
-        map.style.cursor = isQuickFillActive ? "crosshair" : "default";
+
+    // 若在觀察模式下開啟快速佔領，自動切換回佔領模式
+    if (isQuickFillActive && interactionMode === 'observe') {
+        setInteractionMode('occupy');
+        return;
     }
 
     if (!isQuickFillActive && typeof clearBrushHover === 'function') {
         clearBrushHover();
     }
+
+    updateMapCursor();
+    updateActionStatusUI();
 }
 
 // 設定筆刷大小
@@ -177,7 +235,7 @@ function setPhase(p) {
     });
 }
 
-// 戰術標記管理
+// 戰術標記管理 (與公會佔領整合共用選擇狀態)
 let currentMarkerTool = null;
 let currentMarkerValue = "";
 
@@ -188,6 +246,15 @@ function selectMarkerTool(type) {
         currentMarkerTool = type;
     }
 
+    // 選擇標記工具時自動進入佔領模式
+    if (currentMarkerTool && interactionMode === 'observe') {
+        setInteractionMode('occupy');
+    }
+
+    if (currentMarkerTool && typeof clearBrushHover === 'function') {
+        clearBrushHover();
+    }
+
     document.querySelectorAll('.marker-btn').forEach(btn => {
         btn.classList.remove('active');
         if (currentMarkerTool === type && btn.classList.contains(type)) {
@@ -195,15 +262,10 @@ function selectMarkerTool(type) {
         }
     });
 
-    const statusText = document.getElementById("marker-status");
-    if (!currentMarkerTool) {
-        statusText.innerText = "目前模式：無 (點擊佔領)";
-        statusText.style.color = "#aaa";
-    } else {
-        const names = { attack: "進攻", defend: "防守", ban: "禁止", warn: "注意", clear: "清除" };
-        statusText.innerText = `目前模式：${names[type]}`;
-        statusText.style.color = "#fff";
-    }
+    // 共用選擇狀態：標記啟動時取消公會列表選中高亮，切回無標記時恢復
+    renderGuildSelectors();
+    updateMapCursor();
+    updateActionStatusUI();
 }
 
 function updateMarkerValue(val) {
@@ -231,14 +293,22 @@ function renderGuildSelectors() {
     selector.innerHTML = "";
 
     Object.values(GUILD_CONFIG).forEach(guild => {
-        const isSelected = (currentGuildId === guild.id);
+        // 當戰術標記工具啟用時，公會項目不顯示選中高亮
+        const isSelected = (!currentMarkerTool && currentGuildId === guild.id);
         const wrapper = document.createElement("div");
         wrapper.className = `guild-item ${isSelected ? 'active' : ''}`;
 
-        // 點擊整行選取該公會
+        // 點擊整行：立即切換為該公會佔領模式（清除戰術標記並進入佔領模式）
         wrapper.onclick = () => {
             currentGuildId = guild.id;
-            renderGuildSelectors(); 
+            currentMarkerTool = null;
+            document.querySelectorAll('.marker-btn').forEach(btn => btn.classList.remove('active'));
+            if (interactionMode === 'observe') {
+                setInteractionMode('occupy');
+            }
+            renderGuildSelectors();
+            updateMapCursor();
+            updateActionStatusUI();
         };
 
         const colorBox = document.createElement("div");
@@ -677,3 +747,160 @@ function updateLeaderboard() {
         listContainer.innerHTML = "<div style='padding:20px; color:#666; text-align:center;'>尚無公會佔領設施或分數資料</div>";
     }
 }
+
+// --- 新手引導教學模式 (Onboarding Tour) ---
+const TOUR_STORAGE_KEY = "pirate_chess_tour_done";
+let currentTourStep = 0;
+
+const TOUR_STEPS = [
+    {
+        targetId: null,
+        tab: "selector",
+        title: "歡迎使用海盜棋模擬網站",
+        desc: "這裡提供完整的海盜棋戰術推演、領地連通檢測與計分模擬功能。\n\n操作提示：使用滑鼠滾輪可縮放地圖，拖曳可平移視角；右上角「✕ / ☰」可隨時收合側邊欄，「?」可隨時重新開啟本教學。"
+    },
+    {
+        targetId: "mode-switcher",
+        tab: "selector",
+        title: "1. 觀察模式與佔領模式切換",
+        desc: "系統區分「觀察模式」與「佔領模式」：\n• 觀察模式：僅供拖曳瀏覽地圖，點擊不會誤觸佔領或標記。\n• 佔領模式：點擊地圖即可依目前選取的公會或戰術標記進行編輯。"
+    },
+    {
+        targetId: "guild-selector",
+        tab: "selector",
+        title: "2. 公會列表與快速管理",
+        desc: "點擊任一公會即可切換為該公會佔領狀態（並自動切入佔領模式）。\n• 點擊「✎」可自訂公會名稱與顏色，據點船艦與最大勢力海域會同步顯示。\n• 點擊「🗑」可一鍵清除該公會所有佔領海域。"
+    },
+    {
+        targetId: "brush-section",
+        tab: "selector",
+        title: "3. 筆刷大小與快速佔領",
+        desc: "筆刷大小（1格、7格、19格、37格）會同步套用於「點擊佔領」與「快速佔領」。\n開啟「快速佔領」後，按住滑鼠左鍵拖曳即可連續塗抹大片海域（右鍵或中鍵仍可拖曳移動地圖）。"
+    },
+    {
+        targetId: "marker-section",
+        tab: "selector",
+        title: "4. 戰術標記（共用選擇狀態）",
+        desc: "提供進攻、防守、禁止、注意與清除標記（可選填億數）。\n戰術標記與公會佔領共用選擇狀態：點擊標記工具後即可放置標記；之後只要直接點擊任一公會，就會立即切回該公會佔領模式！"
+    },
+    {
+        targetId: "phase-section",
+        tab: "selector",
+        title: "5. 地圖階段與地標切換",
+        desc: "可切換「第一天、第二天、第三天」的中央禁區開放範圍，也可開關「隱藏地標」來更清楚檢視領地顏色與邊界。"
+    },
+    {
+        targetId: "scoring-control-panel",
+        tab: "leaderboard",
+        title: "6. 設施統計與即時計分系統",
+        desc: "活動時間固定為 19:00–21:00。\n在此可手動設定「現在時間」、輸入各公會「目前已有分數」，並拖動模擬時間拉條，即時預覽每 10 分鐘定給分與 21:00 最終結算排行！"
+    }
+];
+
+function startTour(forceOpenSidebar) {
+    currentTourStep = 0;
+    if (forceOpenSidebar) {
+        const sidebar = document.getElementById("ui-sidebar");
+        const toggleBtn = document.getElementById("menu-toggle");
+        if (sidebar && sidebar.classList.contains("sidebar-closed")) {
+            sidebar.classList.remove("sidebar-closed");
+            sidebar.classList.add("sidebar-open");
+            if (toggleBtn) toggleBtn.innerText = "✕";
+        }
+    }
+    const overlay = document.getElementById("tour-overlay");
+    if (overlay) overlay.style.display = "block";
+    renderTourStep();
+}
+
+function skipTour() {
+    localStorage.setItem(TOUR_STORAGE_KEY, "true");
+    const overlay = document.getElementById("tour-overlay");
+    if (overlay) overlay.style.display = "none";
+    document.querySelectorAll(".tour-target-active").forEach(el => el.classList.remove("tour-target-active"));
+    switchTab("selector");
+}
+
+function nextTourStep() {
+    if (currentTourStep < TOUR_STEPS.length - 1) {
+        currentTourStep++;
+        renderTourStep();
+    } else {
+        skipTour();
+    }
+}
+
+function prevTourStep() {
+    if (currentTourStep > 0) {
+        currentTourStep--;
+        renderTourStep();
+    }
+}
+
+function renderTourStep() {
+    const step = TOUR_STEPS[currentTourStep];
+    if (!step) return;
+
+    // 確保側邊欄開啟並切換到對應分頁
+    const sidebar = document.getElementById("ui-sidebar");
+    const toggleBtn = document.getElementById("menu-toggle");
+    if (sidebar && sidebar.classList.contains("sidebar-closed")) {
+        sidebar.classList.remove("sidebar-closed");
+        sidebar.classList.add("sidebar-open");
+        if (toggleBtn) toggleBtn.innerText = "✕";
+    }
+    if (step.tab) {
+        switchTab(step.tab);
+    }
+
+    document.getElementById("tour-step-badge").innerText = `步驟 ${currentTourStep + 1} / ${TOUR_STEPS.length}`;
+    document.getElementById("tour-title").innerText = step.title;
+    document.getElementById("tour-desc").innerText = step.desc;
+
+    const prevBtn = document.getElementById("tour-prev-btn");
+    const nextBtn = document.getElementById("tour-next-btn");
+    if (prevBtn) prevBtn.style.visibility = currentTourStep === 0 ? "hidden" : "visible";
+    if (nextBtn) nextBtn.innerText = (currentTourStep === TOUR_STEPS.length - 1) ? "完成" : "下一步";
+
+    // 更新聚光燈與卡片位置
+    document.querySelectorAll(".tour-target-active").forEach(el => el.classList.remove("tour-target-active"));
+    const spotlight = document.getElementById("tour-spotlight");
+    const card = document.getElementById("tour-card");
+
+    const targetEl = step.targetId ? document.getElementById(step.targetId) : null;
+    if (targetEl && spotlight) {
+        const rect = targetEl.getBoundingClientRect();
+        const pad = 6;
+        spotlight.style.display = "block";
+        spotlight.style.left = `${rect.left - pad}px`;
+        spotlight.style.top = `${rect.top - pad}px`;
+        spotlight.style.width = `${rect.width + pad * 2}px`;
+        spotlight.style.height = `${rect.height + pad * 2}px`;
+
+        // 將引導卡片置於目標左側（避免遮擋右側側邊欄）
+        if (card) {
+            card.style.transform = "none";
+            const cardW = 340;
+            const leftPos = Math.max(20, rect.left - cardW - 24);
+            const topPos = Math.max(20, Math.min(window.innerHeight - 260, rect.top));
+            card.style.left = `${leftPos}px`;
+            card.style.top = `${topPos}px`;
+        }
+    } else {
+        if (spotlight) spotlight.style.display = "none";
+        if (card) {
+            card.style.left = "50%";
+            card.style.top = "50%";
+            card.style.transform = "translate(-50%, -50%)";
+        }
+    }
+}
+
+// 初次進入網站自動觸發引導模式
+document.addEventListener("DOMContentLoaded", () => {
+    updateActionStatusUI();
+    updateMapCursor();
+    if (localStorage.getItem(TOUR_STORAGE_KEY) !== "true") {
+        setTimeout(() => startTour(true), 400);
+    }
+});

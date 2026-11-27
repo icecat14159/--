@@ -122,10 +122,17 @@ function getBrushHexes(centerQ, centerR, brushSize) {
     return result;
 }
 
+// 判斷目前是否處於「公會佔領」狀態（佔領模式且非戰術標記）
+function isGuildOccupyMode() {
+    return typeof getInteractionMode === "function" &&
+           getInteractionMode() === "occupy" &&
+           !getMarkerToolStatus().type;
+}
+
 // 高亮顯示筆刷涵蓋格子
 function highlightBrushHover(centerHex) {
     clearBrushHover();
-    if (!getQuickFillStatus()) return;
+    if (!isGuildOccupyMode()) return;
 
     const q = parseInt(centerHex.dataset.q);
     const r = parseInt(centerHex.dataset.r);
@@ -187,19 +194,20 @@ for (let q = 0; q < COLS; q++) {
             }
         }
         
-        // 滑鼠移入：筆刷高亮預覽與按住拖曳塗抹
+        // 滑鼠移入：在公會佔領狀態下顯示筆刷範圍預覽，若開啟快速佔領並按住左鍵則連續塗抹
         hex.addEventListener("mouseenter", function() {
-            if (getQuickFillStatus()) {
+            if (isGuildOccupyMode()) {
                 highlightBrushHover(this);
-                if (isMouseDown) {
+                if (getQuickFillStatus() && isMouseDown) {
                     paintWithBrush(this);
                 }
             }
         });
 
-        // 點擊事件：支援標記工具與一般佔領
+        // 點擊事件：觀察模式不觸發；佔領模式下依共用狀態執行標記或筆刷點擊佔領
         hex.addEventListener("click", function(e) {
-            if (getQuickFillStatus()) return; // 筆刷模式改由 mousedown 處理
+            if (typeof getInteractionMode === "function" && getInteractionMode() === "observe") return;
+            if (getQuickFillStatus() && isGuildOccupyMode()) return; // 快速佔領改由 mousedown/mouseenter 處理
             
             const distMoved = Math.hypot(translateX - dragStartTranslateX, translateY - dragStartTranslateY);
             if (distMoved > 3) return; // 拖曳時不觸發點擊
@@ -208,7 +216,7 @@ for (let q = 0; q < COLS; q++) {
             if (markerStatus.type) {
                 placeMarker(this, markerStatus.type, markerStatus.value);
             } else {
-                occupyTile(this);
+                paintWithBrush(this); // 同步套用筆刷大小於點擊佔領
                 refreshAllLogic();
             }
         });
@@ -461,8 +469,15 @@ svg.addEventListener("mousedown", (e) => {
     }
 
     // 左鍵點擊
-    if (!getQuickFillStatus()) {
-        // 筆刷關閉：一般模式支援拖曳
+    if (typeof getInteractionMode === "function" && getInteractionMode() === "observe") {
+        // 觀察模式：始終允許左鍵拖曳地圖
+        isDragging = true;
+        startX = e.clientX - translateX;
+        startY = e.clientY - translateY;
+        svg.style.cursor = "grabbing";
+        svg.classList.add("is-interacting");
+    } else if (!getQuickFillStatus() || !isGuildOccupyMode()) {
+        // 佔領模式(非快速佔領)或標記模式：支援拖曳平移，短按於 click 觸發動作
         if (e.target.tagName === "svg" || e.target.tagName === "polygon" || e.target.id === "map-background") {
             isDragging = true;
             startX = e.clientX - translateX;
@@ -471,7 +486,7 @@ svg.addEventListener("mousedown", (e) => {
             svg.classList.add("is-interacting");
         }
     } else if (e.target.classList.contains("hex")) {
-        // 筆刷模式：左鍵點擊立即塗抹佔領筆刷範圍
+        // 快速佔領模式：左鍵點擊立即塗抹佔領筆刷範圍
         paintWithBrush(e.target);
     }
 });
@@ -489,12 +504,16 @@ window.addEventListener("mousemove", (e) => {
 
 // --- 滑鼠放開 ---
 window.addEventListener("mouseup", () => {
-    if (isMouseDown && getQuickFillStatus()) {
-        refreshAllLogic(); // 筆刷塗抹完畢後更新連通性、邊框、勢力標籤與計分
+    if (isMouseDown && getQuickFillStatus() && isGuildOccupyMode()) {
+        refreshAllLogic(); // 快速佔領塗抹完畢後更新連通性、邊框、勢力標籤與計分
     }
     isMouseDown = false;
     isDragging = false;
-    svg.style.cursor = getQuickFillStatus() ? "crosshair" : "default";
+    if (typeof updateMapCursor === "function") {
+        updateMapCursor();
+    } else {
+        svg.style.cursor = "default";
+    }
     svg.classList.remove("is-interacting");
 });
 
